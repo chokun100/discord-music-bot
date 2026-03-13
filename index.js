@@ -66,17 +66,56 @@ client.on('messageCreate', async (message) => {
 });
 
 // ─── Auto-cleanup when bot is kicked/disconnected from voice ─────────────────
-client.on('voiceStateUpdate', (oldState, newState) => {
-    // Only care about the bot itself
-    if (oldState.member?.id !== client.user.id) return;
+const idleTimers = new Map();
 
-    // Bot left a voice channel (was in one, now isn't)
-    if (oldState.channelId && !newState.channelId) {
+client.on('voiceStateUpdate', (oldState, newState) => {
+    const botId = client.user.id;
+
+    // --- Bot itself left voice ---
+    if (oldState.member?.id === botId && oldState.channelId && !newState.channelId) {
         console.log(`🧹 Bot disconnected from voice in guild ${oldState.guild.id}, cleaning up queue`);
+        clearTimeout(idleTimers.get(oldState.guild.id));
+        idleTimers.delete(oldState.guild.id);
         try {
             const queue = client.distube.getQueue(oldState.guild.id);
             if (queue) queue.stop();
         } catch { }
+        return;
+    }
+
+    // --- Someone else left the bot's voice channel ---
+    const botVoice = oldState.guild.members.me?.voice;
+    if (!botVoice?.channelId) return;
+
+    const channel = botVoice.channel;
+    if (!channel) return;
+
+    // Count real (non-bot) members in the channel
+    const realMembers = channel.members.filter(m => !m.user.bot).size;
+
+    if (realMembers === 0) {
+        // Start 5-minute idle timer — channel is empty
+        if (!idleTimers.has(oldState.guild.id)) {
+            console.log(`⏱️ Voice channel empty in guild ${oldState.guild.id}, starting 5-min idle timer`);
+            const timer = setTimeout(() => {
+                console.log(`⏱️ Idle timeout — disconnecting from guild ${oldState.guild.id}`);
+                try {
+                    const queue = client.distube.getQueue(oldState.guild.id);
+                    if (queue) queue.stop();
+                } catch { }
+                try {
+                    const { getVoiceConnection } = require('@discordjs/voice');
+                    const conn = getVoiceConnection(oldState.guild.id, botId);
+                    if (conn) conn.destroy();
+                } catch { }
+                idleTimers.delete(oldState.guild.id);
+            }, 5 * 60 * 1000); // 5 minutes
+            idleTimers.set(oldState.guild.id, timer);
+        }
+    } else {
+        // Someone joined — cancel the idle timer
+        clearTimeout(idleTimers.get(oldState.guild.id));
+        idleTimers.delete(oldState.guild.id);
     }
 });
 
