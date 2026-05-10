@@ -1,14 +1,22 @@
 {
-  "name": "discord-bot",
-  "version": "1.0.0",
-  "description": "",
+  "name": "momuxic-bot",
+  "version": "2.0.0",
+  "description": "Momuxic — Discord Music Bot with Premium & DJ System",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "pm2": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop momuxic",
+    "pm2:restart": "pm2 restart momuxic",
+    "pm2:logs": "pm2 logs momuxic",
+    "pm2:status": "pm2 status"
   },
-  "keywords": [],
+  "keywords": ["discord", "music", "bot"],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",

@@ -33,7 +33,31 @@ loadCommands(client);
 // ─── Initialize DisTube ─────────────────────────────────────────────────────
 client.distube = new DisTube(client, {
     emitNewSongOnly: true,
-    plugins: [new YtDlpPlugin({ update: false })],
+    savePreviousSongs: true,
+    nsfw: false,
+    plugins: [
+        new YtDlpPlugin({
+            update: false,
+        }),
+    ],
+    // FFmpeg args for stable, smooth audio streaming
+    ffmpeg: {
+        args: {
+            global: {},
+            input: {
+                reconnect: '1',
+                reconnect_streamed: '1',
+                reconnect_delay_max: '5',
+                analyzeduration: '0',
+            },
+            output: {
+                acodec: 'libopus',
+                f: 'opus',
+                ar: '48000',
+                ac: '2',
+            },
+        },
+    },
 });
 
 // Register DisTube event handlers
@@ -102,6 +126,12 @@ client.on('messageCreate', async (message) => {
         console.error(`❌ Error executing command "${commandName}" in guild ${message.guild?.id}:`, error);
         message.reply('❌ An error occurred while executing this command.').catch(() => { });
     }
+
+    // Delete the user's command message to keep chat clean
+    // Bot response (reply) will still show who triggered it
+    setTimeout(() => {
+        message.delete().catch(() => { });
+    }, 1000);
 });
 
 // ─── Auto-cleanup when bot is kicked/disconnected from voice ─────────────────
