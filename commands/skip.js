@@ -2,6 +2,8 @@ module.exports = {
     name: 'skip',
     aliases: ['s', 'next'],
     description: 'Skip the current song',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

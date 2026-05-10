@@ -5,6 +5,7 @@ module.exports = {
     name: 'play',
     aliases: ['p'],
     description: 'Play a song from YouTube URL or search term',
+    requireVoice: true,
     async execute(message, args, client) {
         const voiceChannel = message.member.voice.channel;
 

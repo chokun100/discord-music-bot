@@ -5,6 +5,8 @@ module.exports = {
     name: 'remove',
     aliases: ['rm', 'delete'],
     description: 'Remove a song from the queue by position — e.g. !remove 3',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

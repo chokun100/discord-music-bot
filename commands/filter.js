@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const Premium = require('../database/models/premium');
 
 // Available audio filters from DisTube
 const FILTERS = {
@@ -24,6 +25,8 @@ module.exports = {
     name: 'filter',
     aliases: ['fx', 'effect', 'filters'],
     description: 'Toggle audio filters — e.g. !filter bassboost',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 
@@ -31,13 +34,18 @@ module.exports = {
             return message.reply('❌ There is nothing playing right now!');
         }
 
+        const isPremium = Premium.isActive(message.guild.id);
+        const freeFilters = config.freeFilters || ['bassboost', 'nightcore', 'vaporwave'];
+
         // No args = show available filters and active ones
         if (!args.length) {
             const active = queue.filters.names;
             const list = Object.entries(FILTERS)
                 .map(([key, val]) => {
                     const isActive = active.includes(key);
-                    return `${val.emoji} \`${key}\` — ${val.name} ${isActive ? '✅' : ''}`;
+                    const isFree = freeFilters.includes(key);
+                    const lockIcon = (!isPremium && !isFree) ? '🔒' : '';
+                    return `${val.emoji} \`${key}\` — ${val.name} ${isActive ? '✅' : ''} ${lockIcon}`;
                 })
                 .join('\n');
 
@@ -45,7 +53,7 @@ module.exports = {
                 .setColor(config.colors.music)
                 .setTitle('🎛️ Audio Filters')
                 .setDescription(list)
-                .setFooter({ text: `Usage: !filter <name> | Active: ${active.length > 0 ? active.join(', ') : 'none'}` })
+                .setFooter({ text: `Usage: !filter <name> | Active: ${active.length > 0 ? active.join(', ') : 'none'}${!isPremium ? ' | 🔒 = Premium Only' : ''}` })
                 .setTimestamp();
 
             return message.reply({ embeds: [embed] });
@@ -67,6 +75,20 @@ module.exports = {
         if (!FILTERS[filterName]) {
             const available = Object.keys(FILTERS).map(f => `\`${f}\``).join(', ');
             return message.reply(`❌ Unknown filter! Available: ${available}`);
+        }
+
+        // Premium check for non-free filters
+        if (!isPremium && !freeFilters.includes(filterName)) {
+            const embed = new EmbedBuilder()
+                .setColor(config.colors.warning)
+                .setTitle('🔒 Premium Filter')
+                .setDescription(
+                    `**${FILTERS[filterName].name}** เป็น filter สำหรับ Premium เท่านั้น!\n\n` +
+                    `🆓 Filter ฟรี: ${freeFilters.map(f => `\`${f}\``).join(', ')}\n\n` +
+                    `ใช้ \`!premium\` เพื่อดูข้อมูล Premium`
+                )
+                .setTimestamp();
+            return message.reply({ embeds: [embed] });
         }
 
         // Toggle filter

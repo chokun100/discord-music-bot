@@ -4,7 +4,9 @@ const config = require('../config');
 module.exports = {
     name: 'skipto',
     aliases: ['st', 'jumpto'],
-    description: 'Skip to a specific position in the queue — e.g. !skipto 3',
+    description: 'Skip to a specific song in the queue — e.g. !skipto 5',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

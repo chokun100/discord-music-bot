@@ -7,6 +7,8 @@ module.exports = {
     name: 'loop',
     aliases: ['repeat', 'lp'],
     description: 'Toggle repeat mode: off → song → queue → off',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

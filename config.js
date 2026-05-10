@@ -10,6 +10,9 @@ module.exports = {
     bugReportChannelId: process.env.BUG_REPORT_CHANNEL_ID || '',
     ownerEmail: process.env.OWNER_EMAIL || '',
 
+    // Bot owner ID (for admin commands like activating premium)
+    ownerId: process.env.OWNER_ID || '',
+
     // Embed colors
     colors: {
         primary: 0x7289DA,   // Discord blurple
@@ -18,11 +21,15 @@ module.exports = {
         error: 0xF04747,     // Red
         music: 0xE91E63,     // Pink
         info: 0x5865F2,      // Indigo
+        premium: 0xFFD700,   // Gold
     },
+
+    // Premium — free tier filter whitelist
+    freeFilters: ['bassboost', 'nightcore', 'vaporwave'],
 
     // Bot activity status
     activity: {
-        name: '🎵 !play | !support',
+        name: '🎵 !play | !premium',
         type: 'LISTENING',
     },
 };

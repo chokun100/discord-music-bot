@@ -5,6 +5,8 @@ module.exports = {
     name: 'seek',
     aliases: [],
     description: 'Jump to a specific timestamp — e.g. !seek 1:30',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

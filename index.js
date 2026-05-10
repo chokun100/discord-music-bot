@@ -5,6 +5,14 @@ const config = require('./config');
 const loadCommands = require('./handlers/commandHandler');
 const registerDistubeEvents = require('./events/distube');
 
+// ─── Database & Middleware ──────────────────────────────────────────────────
+const db = require('./database/db');
+const GuildSettings = require('./database/models/guild');
+const Premium = require('./database/models/premium');
+const checkVoice = require('./middleware/checkVoice');
+const checkDJ = require('./middleware/checkDJ');
+const checkPremium = require('./middleware/checkPremium');
+
 // NOTE: DAVE encryption disabled directly in node_modules/distube/dist/index.js
 // This is a workaround for @discordjs/voice@0.19.x bug (GitHub #11419)
 
@@ -39,15 +47,26 @@ client.once(Events.ClientReady, () => {
     client.user.setActivity(config.activity.name, {
         type: ActivityType.Listening,
     });
+
+    // Clean up expired premium entries on startup
+    const cleaned = Premium.cleanExpired();
+    if (cleaned > 0) {
+        console.log(`🧹 Cleaned ${cleaned} expired premium entries`);
+    }
 });
 
 // ─── Message Command Handler ────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
-    // Ignore bots and messages without the prefix
+    // Ignore bots and DMs
     if (message.author.bot) return;
-    if (!message.content.startsWith(config.prefix)) return;
+    if (!message.guild) return;
 
-    const args = message.content.slice(config.prefix.length).trim().split(/ +/);
+    // Get per-guild prefix (or default)
+    const prefix = GuildSettings.getPrefix(message.guild.id);
+
+    if (!message.content.startsWith(prefix)) return;
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 
     // Find command by name or alias
@@ -57,6 +76,26 @@ client.on('messageCreate', async (message) => {
 
     if (!command) return;
 
+    // ─── Middleware Checks ───────────────────────────────────────────────
+    // 1. Voice channel check
+    if (command.requireVoice) {
+        const ok = await checkVoice(message);
+        if (!ok) return;
+    }
+
+    // 2. DJ role check
+    if (command.requireDJ) {
+        const ok = await checkDJ(message);
+        if (!ok) return;
+    }
+
+    // 3. Premium check
+    if (command.premiumOnly) {
+        const ok = await checkPremium(message, command.description);
+        if (!ok) return;
+    }
+
+    // ─── Execute Command ─────────────────────────────────────────────────
     try {
         await command.execute(message, args, client);
     } catch (error) {
@@ -94,6 +133,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     const realMembers = channel.members.filter(m => !m.user.bot).size;
 
     if (realMembers === 0) {
+        // Check if 24/7 mode is enabled for this guild
+        if (GuildSettings.is247(oldState.guild.id)) {
+            console.log(`🕐 24/7 mode active in guild ${oldState.guild.id}, skipping idle timeout`);
+            return;
+        }
+
         // Start 5-minute idle timer — channel is empty
         if (!idleTimers.has(oldState.guild.id)) {
             console.log(`⏱️ Voice channel empty in guild ${oldState.guild.id}, starting 5-min idle timer`);

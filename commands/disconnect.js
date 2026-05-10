@@ -4,6 +4,8 @@ module.exports = {
     name: 'disconnect',
     aliases: ['dc', 'kick', 'leave'],
     description: 'Disconnect the bot from the voice channel',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const voiceChannel = message.member.voice.channel;
 

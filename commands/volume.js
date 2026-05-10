@@ -5,6 +5,8 @@ module.exports = {
     name: 'volume',
     aliases: ['vol', 'v'],
     description: 'Set or show the playback volume (1-150)',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

@@ -3,7 +3,7 @@ const config = require('../config');
 
 module.exports = {
     name: 'support',
-    aliases: ['help', 'info'],
+    aliases: ['info', 'contact'],
     description: 'Get support info and links',
     async execute(message) {
         const embed = new EmbedBuilder()

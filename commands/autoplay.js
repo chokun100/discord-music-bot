@@ -5,6 +5,8 @@ module.exports = {
     name: 'autoplay',
     aliases: ['ap'],
     description: 'Toggle autoplay (play related songs when queue ends)',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

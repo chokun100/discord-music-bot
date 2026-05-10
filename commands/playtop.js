@@ -5,6 +5,8 @@ module.exports = {
     name: 'playtop',
     aliases: ['pt', 'ptop'],
     description: 'Add a song to the top of the queue (plays next)',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const voiceChannel = message.member.voice.channel;
 

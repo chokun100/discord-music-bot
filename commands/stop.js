@@ -2,6 +2,8 @@ module.exports = {
     name: 'stop',
     aliases: ['leave', 'disconnect', 'dc'],
     description: 'Stop playing and leave the voice channel',
+    requireVoice: true,
+    requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 
