@@ -13,8 +13,8 @@ const checkVoice = require('./middleware/checkVoice');
 const checkDJ = require('./middleware/checkDJ');
 const checkPremium = require('./middleware/checkPremium');
 
-// NOTE: DAVE encryption disabled directly in node_modules/distube/dist/index.js
-// This is a workaround for @discordjs/voice@0.19.x bug (GitHub #11419)
+// NOTE: DAVE encryption ENABLED in node_modules/distube/dist/index.js (daveEncryption: true)
+// Requires @snazzah/davey package — Discord mandated DAVE protocol since March 2026
 
 // ─── Create Discord Client ──────────────────────────────────────────────────
 const client = new Client({
