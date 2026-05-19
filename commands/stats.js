@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const GuildSettings = require('../database/models/guild');
 const os = require('os');
 
 module.exports = {
@@ -43,7 +44,7 @@ module.exports = {
                     `**DisTube:** v${require('distube').version}`,
                 ].join('\n'), inline: false }
             )
-            .setFooter({ text: `Ping: ${client.ws.ping}ms • Prefix: ${config.prefix}` })
+            .setFooter({ text: `Ping: ${client.ws.ping}ms • Prefix: ${GuildSettings.getPrefix(message.guild.id)}` })
             .setTimestamp();
 
         message.reply({ embeds: [embed] });

@@ -13,6 +13,9 @@ const checkVoice = require('./middleware/checkVoice');
 const checkDJ = require('./middleware/checkDJ');
 const checkPremium = require('./middleware/checkPremium');
 
+// ─── Cooldown System ────────────────────────────────────────────────────────
+const cooldowns = new Map();
+
 // NOTE: DAVE encryption ENABLED in node_modules/distube/dist/index.js (daveEncryption: true)
 // Requires @snazzah/davey package — Discord mandated DAVE protocol since March 2026
 
@@ -99,6 +102,22 @@ client.on('messageCreate', async (message) => {
         client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
 
     if (!command) return;
+
+    // ─── Cooldown Check ─────────────────────────────────────────────────
+    const cooldownKey = `${message.author.id}-${command.name}`;
+    const cooldownTime = command.cooldown || 3; // default 3 seconds
+    const now = Date.now();
+
+    if (cooldowns.has(cooldownKey)) {
+        const expiresAt = cooldowns.get(cooldownKey);
+        if (now < expiresAt) {
+            const remaining = ((expiresAt - now) / 1000).toFixed(1);
+            return message.reply(`⏳ รอ ${remaining} วินาที ก่อนใช้ \`${command.name}\` อีกครั้ง`).catch(() => { });
+        }
+    }
+    cooldowns.set(cooldownKey, now + (cooldownTime * 1000));
+    // Auto-cleanup cooldown after expiry
+    setTimeout(() => cooldowns.delete(cooldownKey), cooldownTime * 1000);
 
     // ─── Middleware Checks ───────────────────────────────────────────────
     // 1. Voice channel check

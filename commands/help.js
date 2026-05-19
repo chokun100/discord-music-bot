@@ -13,10 +13,10 @@ module.exports = {
         const isPremium = Premium.isActive(message.guild.id);
 
         // Group commands by category
-        const musicCmds = ['play', 'skip', 'stop', 'pause', 'resume', 'queue', 'nowplaying', 'seek', 'volume', 'loop', 'shuffle', 'remove', 'playtop', 'move', 'skipto', 'autoplay', 'filter', 'lyrics'];
+        const musicCmds = ['play', 'search', 'skip', 'voteskip', 'stop', 'pause', 'resume', 'queue', 'nowplaying', 'seek', 'forward', 'rewind', 'volume', 'loop', 'shuffle', 'remove', 'clear', 'playtop', 'move', 'skipto', 'previous', 'replay', 'autoplay', 'filter', 'lyrics', 'grab'];
         const voiceCmds = ['join', 'disconnect'];
         const settingsCmds = ['setdj', 'setprefix', '247'];
-        const utilityCmds = ['help', 'support', 'report', 'stats', 'premium'];
+        const utilityCmds = ['help', 'ping', 'invite', 'support', 'report', 'stats', 'premium', 'history'];
 
         const formatCmd = (name) => {
             const cmd = commands.get(name);

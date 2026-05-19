@@ -1,6 +1,6 @@
 module.exports = {
     name: 'stop',
-    aliases: ['leave', 'disconnect', 'dc'],
+    aliases: ['st0p'],
     description: 'Stop playing and leave the voice channel',
     requireVoice: true,
     requireDJ: true,

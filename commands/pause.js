@@ -1,6 +1,6 @@
 module.exports = {
     name: 'pause',
-    aliases: ['resume'],
+    aliases: [],
     description: 'Pause or resume the current song',
     requireVoice: true,
     requireDJ: true,

@@ -1,5 +1,19 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const db = require('../database/db');
+const Premium = require('../database/models/premium');
+
+// Prepared statement for song history
+const insertHistory = db.prepare(`
+    INSERT INTO song_history (guild_id, user_id, song_name, song_url, duration)
+    VALUES (?, ?, ?, ?, ?)
+`);
+
+// Import voteskip to clear votes on song change
+let clearVotes;
+try {
+    clearVotes = require('../commands/voteskip').clearVotes;
+} catch { clearVotes = () => { }; }
 
 /**
  * Register all DisTube event handlers.
@@ -8,6 +22,8 @@ const config = require('../config');
 module.exports = function registerDistubeEvents(distube) {
     // ─── Now Playing ─────────────────────────────────────────────────────────
     distube.on('playSong', (queue, song) => {
+        // Clear voteskip votes for this guild
+        clearVotes(queue.id);
         const embed = new EmbedBuilder()
             .setColor(config.colors.music)
             .setTitle('🎵 Now Playing')
@@ -21,6 +37,17 @@ module.exports = function registerDistubeEvents(distube) {
             .setTimestamp();
 
         queue.textChannel?.send({ embeds: [embed] }).catch(() => { });
+
+        // Record to song history
+        try {
+            insertHistory.run(
+                queue.id, // guild ID
+                song.user?.id || 'unknown',
+                song.name,
+                song.url,
+                song.duration || 0
+            );
+        } catch { }
     });
 
     // ─── Song Added to Queue ─────────────────────────────────────────────────
@@ -36,6 +63,17 @@ module.exports = function registerDistubeEvents(distube) {
             .setTimestamp();
 
         queue.textChannel?.send({ embeds: [embed] }).catch(() => { });
+
+        // Queue length enforcement
+        const tier = Premium.getTier(queue.id);
+        const maxQueue = tier.maxQueue || 50;
+        if (queue.songs.length > maxQueue + 1) {
+            // Remove the just-added song (last in queue)
+            queue.songs.pop();
+            queue.textChannel?.send(
+                `⚠️ Queue เต็มแล้ว! (สูงสุด ${maxQueue} เพลง)${!Premium.isActive(queue.id) ? '\n⭐ อัพเกรด Premium เพื่อเพิ่มเป็น 500+ เพลง!' : ''}`
+            ).catch(() => { });
+        }
     });
 
     // ─── Playlist Added ──────────────────────────────────────────────────────
@@ -69,8 +107,9 @@ module.exports = function registerDistubeEvents(distube) {
     });
 
     // ─── Error Handler (per-guild isolated) ──────────────────────────────────
-    distube.on('error', (channel, error) => {
-        console.error(`❌ DisTube error in channel ${channel?.id}:`, error);
+    // DisTube v5 signature: (error, queue, song)
+    distube.on('error', (error, queue) => {
+        console.error(`❌ DisTube error in guild ${queue?.id}:`, error?.message || error);
 
         const embed = new EmbedBuilder()
             .setColor(config.colors.error)
@@ -81,8 +120,6 @@ module.exports = function registerDistubeEvents(distube) {
             )
             .setTimestamp();
 
-        if (channel) {
-            channel.send({ embeds: [embed] }).catch(() => { });
-        }
+        queue?.textChannel?.send({ embeds: [embed] }).catch(() => { });
     });
 };

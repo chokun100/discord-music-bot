@@ -1,11 +1,13 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const GuildSettings = require('../database/models/guild');
 
 module.exports = {
     name: 'support',
-    aliases: ['info', 'contact'],
+    aliases: ['contact'],
     description: 'Get support info and links',
-    async execute(message) {
+    async execute(message, args, client) {
+        const prefix = GuildSettings.getPrefix(message.guild.id);
         const embed = new EmbedBuilder()
             .setColor(config.colors.info)
             .setTitle('🛠️ Support & Help')
@@ -25,18 +27,18 @@ module.exports = {
                 },
                 {
                     name: '📝 Report a Bug',
-                    value: 'Use `!report <description>` to send a bug report directly to our team!',
+                    value: `Use \`${prefix}report <description>\` to send a bug report directly to our team!`,
                     inline: false,
                 },
                 {
                     name: '🎵 Music Commands',
                     value: [
-                        '`!play <URL or search>` — Play a song',
-                        '`!skip` — Skip current song',
-                        '`!stop` — Stop & leave',
-                        '`!queue` — View queue',
-                        '`!nowplaying` — Current song info',
-                        '`!pause` / `!resume` — Pause/Resume',
+                        `\`${prefix}play <URL or search>\` — Play a song`,
+                        `\`${prefix}skip\` — Skip current song`,
+                        `\`${prefix}stop\` — Stop & leave`,
+                        `\`${prefix}queue\` — View queue`,
+                        `\`${prefix}nowplaying\` — Current song info`,
+                        `\`${prefix}pause\` / \`${prefix}resume\` — Pause/Resume`,
                     ].join('\n'),
                     inline: false,
                 }

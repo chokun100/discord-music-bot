@@ -11,6 +11,12 @@ module.exports = {
             return message.reply('❌ You need to be in a voice channel first!');
         }
 
+        // Check bot permissions in the voice channel
+        const permissions = voiceChannel.permissionsFor(client.user);
+        if (!permissions.has('Connect') || !permissions.has('Speak')) {
+            return message.reply('❌ บอทไม่มีสิทธิ์ **Connect** หรือ **Speak** ใน Voice Channel นี้!');
+        }
+
         // Check if bot is already in the same channel
         const existing = getVoiceConnection(message.guild.id, client.user.id);
         if (existing && existing.joinConfig.channelId === voiceChannel.id) {
