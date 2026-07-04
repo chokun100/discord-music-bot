@@ -5,6 +5,9 @@ module.exports = {
     name: 'queue',
     aliases: ['q'],
     description: 'Show the current music queue',
+    slashOptions: [
+        { name: 'page', type: 'integer', description: 'Page number to view', required: false, min: 1 },
+    ],
     async execute(message, args, client) {
         // If args provided and not a page number, treat as "add to queue" (like !play)
         if (args.length && isNaN(args[0])) {

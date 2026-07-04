@@ -1,5 +1,3 @@
-const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
-
 module.exports = {
     name: 'join',
     aliases: ['j', 'connect'],
@@ -18,20 +16,14 @@ module.exports = {
         }
 
         // Check if bot is already in the same channel
-        const existing = getVoiceConnection(message.guild.id, client.user.id);
-        if (existing && existing.joinConfig.channelId === voiceChannel.id) {
+        const botVoice = message.guild.members.me?.voice;
+        if (botVoice?.channelId === voiceChannel.id) {
             return message.reply('✅ I\'m already in your voice channel!');
         }
 
         try {
-            joinVoiceChannel({
-                channelId: voiceChannel.id,
-                guildId: message.guild.id,
-                adapterCreator: message.guild.voiceAdapterCreator,
-                group: client.user.id,
-                daveEncryption: false,
-            });
-
+            // Use DisTube's voice manager so it stays compatible with !play
+            await client.distube.voices.join(voiceChannel);
             message.reply(`🔊 Joined **${voiceChannel.name}**!`);
         } catch (error) {
             console.error(`❌ Join error in guild ${message.guild.id}:`, error);

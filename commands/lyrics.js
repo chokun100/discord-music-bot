@@ -5,6 +5,9 @@ module.exports = {
     name: 'lyrics',
     aliases: ['ly', 'words'],
     description: 'Search for song lyrics',
+    slashOptions: [
+        { name: 'query', type: 'string', description: 'Song name (leave empty for current playing song)', required: false },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

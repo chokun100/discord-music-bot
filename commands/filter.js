@@ -24,9 +24,32 @@ const FILTERS = {
 module.exports = {
     name: 'filter',
     aliases: ['fx', 'effect', 'filters'],
-    description: 'Toggle audio filters — e.g. !filter bassboost',
+    description: 'Toggle audio filters — e.g. /filter bassboost',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        {
+            name: 'name', type: 'string', description: 'Filter name', required: false,
+            choices: [
+                { name: 'Bass Boost', value: 'bassboost' },
+                { name: 'Nightcore', value: 'nightcore' },
+                { name: 'Vaporwave', value: 'vaporwave' },
+                { name: '3D Audio', value: '3d' },
+                { name: 'Echo', value: 'echo' },
+                { name: 'Flanger', value: 'flanger' },
+                { name: 'Karaoke', value: 'karaoke' },
+                { name: 'Tremolo', value: 'tremolo' },
+                { name: 'Phaser', value: 'phaser' },
+                { name: 'Reverse', value: 'reverse' },
+                { name: 'Surround', value: 'surround' },
+                { name: 'Earwax', value: 'earwax' },
+                { name: 'Gate', value: 'gate' },
+                { name: 'Haas', value: 'haas' },
+                { name: 'Mcompand', value: 'mcompand' },
+                { name: 'Off (Clear All)', value: 'off' },
+            ],
+        },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

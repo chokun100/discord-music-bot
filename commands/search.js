@@ -7,6 +7,9 @@ module.exports = {
     description: 'Search for a song and choose from results',
     requireVoice: true,
     cooldown: 10,
+    slashOptions: [
+        { name: 'query', type: 'string', description: 'Song name to search for', required: true },
+    ],
     async execute(message, args, client) {
         if (!args.length) {
             return message.reply('❌ ใส่ชื่อเพลงที่ต้องการค้นหา!\nUsage: `!search <ชื่อเพลง>`');

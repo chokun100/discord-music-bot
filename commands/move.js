@@ -4,9 +4,13 @@ const config = require('../config');
 module.exports = {
     name: 'move',
     aliases: ['mv'],
-    description: 'Move a song in queue — e.g. !move 5 1',
+    description: 'Move a song in queue — e.g. /move 5 1',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'from', type: 'integer', description: 'Position of the song to move', required: true, min: 1 },
+        { name: 'to', type: 'integer', description: 'New position', required: true, min: 1 },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

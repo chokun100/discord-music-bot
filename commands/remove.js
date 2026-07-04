@@ -4,9 +4,12 @@ const config = require('../config');
 module.exports = {
     name: 'remove',
     aliases: ['rm', 'delete'],
-    description: 'Remove a song from the queue by position — e.g. !remove 3',
+    description: 'Remove a song from the queue by position — e.g. /remove 3',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'position', type: 'integer', description: 'Queue position to remove', required: true, min: 1 },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

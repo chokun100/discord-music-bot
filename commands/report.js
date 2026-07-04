@@ -5,6 +5,9 @@ module.exports = {
     name: 'report',
     aliases: ['bug', 'feedback'],
     description: 'Report a bug to the bot developers',
+    slashOptions: [
+        { name: 'issue', type: 'string', description: 'Detailed description of the bug (10-1000 chars)', required: true },
+    ],
     async execute(message, args, client) {
         if (!args.length) {
             return message.reply(

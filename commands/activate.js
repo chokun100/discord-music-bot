@@ -6,6 +6,25 @@ module.exports = {
     name: 'activate',
     aliases: ['addpremium', 'givepremium'],
     description: 'Activate premium for a server (Bot Owner only)',
+    slashOptions: [
+        {
+            name: 'action', type: 'string', description: 'Action to perform', required: true,
+            choices: [
+                { name: 'This Server', value: 'this' },
+                { name: 'List All', value: 'list' },
+                { name: 'Remove', value: 'remove' },
+            ],
+        },
+        { name: 'guild_id', type: 'string', description: 'Guild ID (if removing or activating specific guild)', required: false },
+        { name: 'days', type: 'integer', description: 'Days of premium (default 30)', required: false, min: 1 },
+        {
+            name: 'tier', type: 'string', description: 'Premium tier', required: false,
+            choices: [
+                { name: 'Basic', value: 'basic' },
+                { name: 'Pro', value: 'pro' },
+            ],
+        },
+    ],
     async execute(message, args, client) {
         // Bot owner only
         if (message.author.id !== config.ownerId) {

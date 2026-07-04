@@ -4,9 +4,12 @@ const config = require('../config');
 module.exports = {
     name: 'forward',
     aliases: ['ff', 'fwd'],
-    description: 'Fast forward by seconds — e.g. !forward 10',
+    description: 'Fast forward by seconds — e.g. /forward 10',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'seconds', type: 'integer', description: 'Seconds to fast forward (default 10)', required: false, min: 1 },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

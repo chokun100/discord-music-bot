@@ -4,9 +4,12 @@ const config = require('../config');
 module.exports = {
     name: 'rewind',
     aliases: ['rw', 'rew'],
-    description: 'Rewind by seconds — e.g. !rewind 10',
+    description: 'Rewind by seconds — e.g. /rewind 10',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'seconds', type: 'integer', description: 'Seconds to rewind (default 10)', required: false, min: 1 },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

@@ -44,7 +44,7 @@ const stmts = {
 
 // ─── Default Settings ───────────────────────────────────────────────────────
 const DEFAULTS = {
-    prefix: '!',
+    prefix: require('../../config').prefix || '!',
     dj_role_id: null,
     default_volume: 50,
     twenty_four_seven: 0,

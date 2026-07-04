@@ -8,6 +8,9 @@ module.exports = {
     aliases: ['prefix'],
     description: 'Change the bot prefix for this server (Premium)',
     premiumOnly: true,
+    slashOptions: [
+        { name: 'prefix', type: 'string', description: 'New bot prefix (max 5 chars, no spaces)', required: false },
+    ],
     async execute(message, args, client) {
         // Only admins can change prefix
         if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {

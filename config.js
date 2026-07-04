@@ -29,7 +29,7 @@ module.exports = {
 
     // Bot activity status
     activity: {
-        name: '🎵 !play | !premium',
+        name: '🎵 /play | /premium',
         type: 'LISTENING',
     },
 };

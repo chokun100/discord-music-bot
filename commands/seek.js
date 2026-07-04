@@ -4,9 +4,12 @@ const config = require('../config');
 module.exports = {
     name: 'seek',
     aliases: [],
-    description: 'Jump to a specific timestamp — e.g. !seek 1:30',
+    description: 'Jump to a specific timestamp — e.g. /seek 1:30',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'timestamp', type: 'string', description: 'Timestamp (e.g. 1:30 or 90)', required: true },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 

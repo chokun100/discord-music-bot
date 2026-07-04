@@ -7,6 +7,9 @@ module.exports = {
     aliases: ['djrole', 'dj'],
     description: 'Set or remove the DJ role for this server',
     requireDJ: false, // Don't require DJ to set DJ role (admin only)
+    slashOptions: [
+        { name: 'role', type: 'role', description: 'DJ Role to set (leave empty to show current)', required: false },
+    ],
     async execute(message, args, client) {
         // Only admins can set DJ role
         if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {

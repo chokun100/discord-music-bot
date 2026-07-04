@@ -7,6 +7,9 @@ module.exports = {
     description: 'Add a song to the top of the queue (plays next)',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        { name: 'query', type: 'string', description: 'YouTube URL or search term', required: true },
+    ],
     async execute(message, args, client) {
         const voiceChannel = message.member.voice.channel;
 

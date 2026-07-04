@@ -16,6 +16,9 @@ module.exports = {
     aliases: ['songhistory', 'recent'],
     description: 'Show recently played songs in this server (Premium)',
     premiumOnly: true,
+    slashOptions: [
+        { name: 'count', type: 'integer', description: 'Number of recent songs to show (max 25)', required: false, min: 1, max: 25 },
+    ],
     async execute(message, args, client) {
         const limit = Math.min(parseInt(args[0]) || 10, 25);
         const songs = getHistory.all(message.guild.id, limit);

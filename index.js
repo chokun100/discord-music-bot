@@ -4,6 +4,9 @@ const { YtDlpPlugin } = require('@distube/yt-dlp');
 const config = require('./config');
 const loadCommands = require('./handlers/commandHandler');
 const registerDistubeEvents = require('./events/distube');
+const logger = require('./utils/logger');
+const checkYtDlp = require('./utils/checkYtDlp');
+const { wrapInteraction, extractArgs } = require('./utils/interactionWrapper');
 
 // ─── Database & Middleware ──────────────────────────────────────────────────
 const db = require('./database/db');
@@ -54,8 +57,6 @@ client.distube = new DisTube(client, {
                 analyzeduration: '0',
             },
             output: {
-                acodec: 'libopus',
-                f: 'opus',
                 ar: '48000',
                 ac: '2',
             },
@@ -68,8 +69,8 @@ registerDistubeEvents(client.distube);
 
 // ─── Bot Ready Event ────────────────────────────────────────────────────────
 client.once(Events.ClientReady, () => {
-    console.log(`✅ Bot is ready! Logged in as ${client.user.tag}`);
-    console.log(`📡 Serving ${client.guilds.cache.size} server(s)`);
+    logger.info('Bot', `Bot is ready! Logged in as ${client.user.tag}`);
+    logger.info('Bot', `Serving ${client.guilds.cache.size} server(s)`);
 
     client.user.setActivity(config.activity.name, {
         type: ActivityType.Listening,
@@ -78,7 +79,7 @@ client.once(Events.ClientReady, () => {
     // Clean up expired premium entries on startup
     const cleaned = Premium.cleanExpired();
     if (cleaned > 0) {
-        console.log(`🧹 Cleaned ${cleaned} expired premium entries`);
+        logger.info('Premium', `Cleaned ${cleaned} expired premium entries`);
     }
 });
 
@@ -87,6 +88,9 @@ client.on('messageCreate', async (message) => {
     // Ignore bots and DMs
     if (message.author.bot) return;
     if (!message.guild) return;
+
+    // Ignore if message starts with '/' to prevent conflict with Discord Native Slash Commands
+    if (message.content.startsWith('/')) return;
 
     // Get per-guild prefix (or default)
     const prefix = GuildSettings.getPrefix(message.guild.id);
@@ -103,6 +107,9 @@ client.on('messageCreate', async (message) => {
 
     if (!command) return;
 
+    // Log command usage
+    logger.logCommand(message, command.name, args);
+
     // ─── Cooldown Check ─────────────────────────────────────────────────
     const cooldownKey = `${message.author.id}-${command.name}`;
     const cooldownTime = command.cooldown || 3; // default 3 seconds
@@ -112,6 +119,7 @@ client.on('messageCreate', async (message) => {
         const expiresAt = cooldowns.get(cooldownKey);
         if (now < expiresAt) {
             const remaining = ((expiresAt - now) / 1000).toFixed(1);
+            logger.debug('Cooldown', `${message.author.tag} blocked by cooldown on "${command.name}" (${remaining}s left)`);
             return message.reply(`⏳ รอ ${remaining} วินาที ก่อนใช้ \`${command.name}\` อีกครั้ง`).catch(() => { });
         }
     }
@@ -142,7 +150,7 @@ client.on('messageCreate', async (message) => {
     try {
         await command.execute(message, args, client);
     } catch (error) {
-        console.error(`❌ Error executing command "${commandName}" in guild ${message.guild?.id}:`, error);
+        logger.error('Command', `Error executing "${command.name}" by ${message.author.tag} in guild ${message.guild.id}`, error);
         message.reply('❌ An error occurred while executing this command.').catch(() => { });
     }
 
@@ -153,6 +161,72 @@ client.on('messageCreate', async (message) => {
     }, 1000);
 });
 
+// ─── Slash Command (Interaction) Handler ────────────────────────────────────
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.guild) {
+        return interaction.reply({ content: '❌ คำสั่งนี้ใช้ได้เฉพาะในเซิร์ฟเวอร์เท่านั้น!', ephemeral: true });
+    }
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) {
+        return interaction.reply({ content: '❌ ไม่พบคำสั่งนี้!', ephemeral: true });
+    }
+
+    const wrappedMessage = wrapInteraction(interaction);
+    const args = extractArgs(interaction);
+
+    // Log command usage
+    logger.logCommand(wrappedMessage, command.name, args);
+
+    // ─── Cooldown Check ─────────────────────────────────────────────────
+    const cooldownKey = `${interaction.user.id}-${command.name}`;
+    const cooldownTime = command.cooldown || 3; // default 3 seconds
+    const now = Date.now();
+
+    if (cooldowns.has(cooldownKey)) {
+        const expiresAt = cooldowns.get(cooldownKey);
+        if (now < expiresAt) {
+            const remaining = ((expiresAt - now) / 1000).toFixed(1);
+            logger.debug('Cooldown', `${interaction.user.tag} blocked by cooldown on "${command.name}" (${remaining}s left)`);
+            return interaction.reply({ content: `⏳ รอ ${remaining} วินาที ก่อนใช้ \`${command.name}\` อีกครั้ง`, ephemeral: true }).catch(() => { });
+        }
+    }
+    cooldowns.set(cooldownKey, now + (cooldownTime * 1000));
+    setTimeout(() => cooldowns.delete(cooldownKey), cooldownTime * 1000);
+
+    // ─── Middleware Checks ───────────────────────────────────────────────
+    if (command.requireVoice) {
+        const ok = await checkVoice(wrappedMessage);
+        if (!ok) return;
+    }
+
+    if (command.requireDJ) {
+        const ok = await checkDJ(wrappedMessage);
+        if (!ok) return;
+    }
+
+    if (command.premiumOnly) {
+        const ok = await checkPremium(wrappedMessage, command.description);
+        if (!ok) return;
+    }
+
+    // ─── Execute Command ─────────────────────────────────────────────────
+    try {
+        await command.execute(wrappedMessage, args, client);
+    } catch (error) {
+        logger.error('Command', `Error executing slash command "${command.name}" by ${interaction.user.tag} in guild ${interaction.guild.id}`, error);
+        const errorMsg = '❌ An error occurred while executing this command.';
+        try {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: errorMsg, ephemeral: true });
+            } else {
+                await interaction.reply({ content: errorMsg, ephemeral: true });
+            }
+        } catch { }
+    }
+});
+
 // ─── Auto-cleanup when bot is kicked/disconnected from voice ─────────────────
 const idleTimers = new Map();
 
@@ -161,7 +235,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
     // --- Bot itself left voice ---
     if (oldState.member?.id === botId && oldState.channelId && !newState.channelId) {
-        console.log(`🧹 Bot disconnected from voice in guild ${oldState.guild.id}, cleaning up queue`);
+        logger.info('Voice', `Bot disconnected from voice in guild ${oldState.guild.id}, cleaning up queue`);
         clearTimeout(idleTimers.get(oldState.guild.id));
         idleTimers.delete(oldState.guild.id);
         try {
@@ -184,15 +258,15 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     if (realMembers === 0) {
         // Check if 24/7 mode is enabled for this guild
         if (GuildSettings.is247(oldState.guild.id)) {
-            console.log(`🕐 24/7 mode active in guild ${oldState.guild.id}, skipping idle timeout`);
+            logger.info('Voice', `24/7 mode active in guild ${oldState.guild.id}, skipping idle timeout`);
             return;
         }
 
         // Start 5-minute idle timer — channel is empty
         if (!idleTimers.has(oldState.guild.id)) {
-            console.log(`⏱️ Voice channel empty in guild ${oldState.guild.id}, starting 5-min idle timer`);
+            logger.info('Voice', `Channel empty in guild ${oldState.guild.id}, starting 5-min idle timer`);
             const timer = setTimeout(() => {
-                console.log(`⏱️ Idle timeout — disconnecting from guild ${oldState.guild.id}`);
+                logger.info('Voice', `Idle timeout — disconnecting from guild ${oldState.guild.id}`);
                 try {
                     const queue = client.distube.getQueue(oldState.guild.id);
                     if (queue) queue.stop();
@@ -215,12 +289,15 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 // ─── Global Error Handlers (prevents total crash) ───────────────────────────
 process.on('uncaughtException', (error) => {
-    console.error('⚠️ Uncaught Exception:', error);
+    logger.error('Process', 'Uncaught Exception', error);
 });
 
 process.on('unhandledRejection', (reason) => {
-    console.error('⚠️ Unhandled Rejection:', reason);
+    logger.error('Process', 'Unhandled Rejection', reason instanceof Error ? reason : new Error(String(reason)));
 });
+
+// ─── Check yt-dlp version & auto-update ─────────────────────────────────────
+checkYtDlp();
 
 // ─── Login ──────────────────────────────────────────────────────────────────
 client.login(config.token);

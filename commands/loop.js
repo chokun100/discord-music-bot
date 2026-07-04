@@ -9,6 +9,16 @@ module.exports = {
     description: 'Toggle repeat mode: off → song → queue → off',
     requireVoice: true,
     requireDJ: true,
+    slashOptions: [
+        {
+            name: 'mode', type: 'string', description: 'Repeat mode', required: false,
+            choices: [
+                { name: 'Off', value: 'off' },
+                { name: 'Song', value: 'song' },
+                { name: 'Queue', value: 'queue' },
+            ],
+        },
+    ],
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 
