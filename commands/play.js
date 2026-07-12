@@ -75,19 +75,19 @@ module.exports = {
             }
         } catch { }
 
+        // DisTube v5 validates options.message with isMessageInstance()
+        // Wrapped interactions are NOT real Discord.Message, so omit the field
+        const playOptions = {
+            member: message.member,
+            textChannel: message.channel,
+        };
+        if (!message._isInteraction) {
+            playOptions.message = message;
+        }
+
         try {
             await message.reply(`🔍 Searching for: **${query}**...`);
             logger.debug('Play', `Calling distube.play() for guild ${message.guild.id}...`);
-
-            // DisTube v5 validates options.message with isMessageInstance()
-            // Wrapped interactions are NOT real Discord.Message, so omit the field
-            const playOptions = {
-                member: message.member,
-                textChannel: message.channel,
-            };
-            if (!message._isInteraction) {
-                playOptions.message = message;
-            }
 
             await client.distube.play(voiceChannel, query, playOptions);
 
