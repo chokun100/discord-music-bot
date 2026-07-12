@@ -79,11 +79,17 @@ module.exports = {
             await message.reply(`🔍 Searching for: **${query}**...`);
             logger.debug('Play', `Calling distube.play() for guild ${message.guild.id}...`);
 
-            await client.distube.play(voiceChannel, query, {
+            // DisTube v5 validates options.message with isMessageInstance()
+            // Wrapped interactions are NOT real Discord.Message, so omit the field
+            const playOptions = {
                 member: message.member,
                 textChannel: message.channel,
-                message,
-            });
+            };
+            if (!message._isInteraction) {
+                playOptions.message = message;
+            }
+
+            await client.distube.play(voiceChannel, query, playOptions);
 
             logger.debug('Play', `distube.play() resolved successfully for guild ${message.guild.id}`);
         } catch (error) {
@@ -105,11 +111,7 @@ module.exports = {
                 } catch { }
 
                 try {
-                    await client.distube.play(voiceChannel, query, {
-                        member: message.member,
-                        textChannel: message.channel,
-                        message,
-                    });
+                    await client.distube.play(voiceChannel, query, playOptions);
                     logger.info('Play', `Retry succeeded for guild ${message.guild.id}`);
                     return; // Retry succeeded
                 } catch (retryError) {
