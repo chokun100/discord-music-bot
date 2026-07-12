@@ -47,14 +47,19 @@ client.distube = new DisTube(client, {
         }),
     ],
     // FFmpeg args for stable, smooth audio streaming
+    // Handles YouTube CDN connection resets (error -10054) gracefully
     ffmpeg: {
         args: {
             global: {},
             input: {
                 reconnect: '1',
                 reconnect_streamed: '1',
+                reconnect_on_network_error: '1',
+                reconnect_on_http_error: '4xx,5xx',
                 reconnect_delay_max: '5',
                 analyzeduration: '0',
+                probesize: '32768',
+                rw_timeout: '10000000',       // 10s read/write timeout (microseconds)
             },
             output: {
                 ar: '48000',

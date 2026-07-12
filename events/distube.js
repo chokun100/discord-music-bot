@@ -141,11 +141,17 @@ module.exports = function registerDistubeEvents(distube) {
         // ข้าม progress log ที่ spam ทุก 0.5 วินาที (size=...time=...speed=...)
         if (/size=\s*\d+.*time=.*speed=/i.test(msg)) return;
 
+        // spawn, exit, stream events → log เป็น debug เสมอ (ไม่ใช่ error แม้มีคำ "error" ใน arg name)
+        if (/\[(process|stream|test)\]/.test(msg)) {
+            logger.debug('FFmpeg', msg);
+            return;
+        }
+
         // error/warning จาก ffmpeg → log เป็น WARN
         if (/error|warn|fail|cannot|invalid|abort/i.test(msg)) {
             logger.warn('FFmpeg', msg);
         } else {
-            // spawn, exit, stream events → log เป็น debug
+            // ffmpeg metadata, format info → log เป็น debug
             logger.debug('FFmpeg', msg);
         }
     });
