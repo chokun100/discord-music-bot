@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'rewind',
@@ -14,7 +13,7 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         const seconds = parseInt(args[0]) || 10;
@@ -22,12 +21,6 @@ module.exports = {
 
         queue.seek(newTime);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('⏪ Rewind')
-            .setDescription(`ย้อนกลับ **${seconds}** วินาที`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'กรอย้อนกลับ', `⏪ ย้อนกลับ **${seconds}** วินาที`);
     },
 };

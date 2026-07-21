@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const { reply } = require('../utils/embed');
 
 // Track votes per guild
 const voteMap = new Map();
@@ -14,7 +15,7 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         const voiceChannel = message.member.voice.channel;
@@ -26,13 +27,13 @@ module.exports = {
             try {
                 if (queue.songs.length <= 1) {
                     await queue.stop();
-                    return message.reply('⏭️ Skipped! No more songs in the queue.');
+                    return reply.success(message, 'ข้ามเพลงแล้ว', 'ไม่มีเพลงถัดไปในคิว — หยุดเล่นแล้ว');
                 }
                 await queue.skip();
                 voteMap.delete(message.guildId);
-                return message.react('⏭️').catch(() => { });
+                return reply.success(message, 'ข้ามเพลงแล้ว', '⏭️ ข้ามไปยังเพลงถัดไป');
             } catch (error) {
-                return message.reply('❌ Could not skip the song.');
+                return reply.error(message, 'ข้ามเพลงไม่ได้', 'เกิดข้อผิดพลาดในการข้ามเพลง');
             }
         }
 
@@ -45,7 +46,7 @@ module.exports = {
         
         // Check if user already voted
         if (votes.has(message.author.id)) {
-            return message.reply(`❌ คุณโหวตไปแล้ว! (${votes.size}/${required} votes)`);
+            return reply.warn(message, 'โหวตไปแล้ว', `คุณได้โหวตข้ามเพลงไปแล้ว! (${votes.size}/${required} เสียง)`);
         }
 
         // Add vote
@@ -53,10 +54,10 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(config.colors.info)
-            .setTitle('🗳️ Vote Skip')
+            .setTitle('🗳️ โหวตข้ามเพลง (Vote Skip)')
             .setDescription(
-                `${message.author} โหวต skip!\n\n` +
-                `📊 **${votes.size}/${required}** votes needed`
+                `${message.author} ได้ลงคะแนนโหวตข้ามเพลง!\n\n` +
+                `📊 ต้องการอีก **${votes.size}/${required}** เสียง`
             )
             .setTimestamp();
 
@@ -66,20 +67,20 @@ module.exports = {
                 if (queue.songs.length <= 1) {
                     await queue.stop();
                     voteMap.delete(message.guildId);
-                    embed.setTitle('⏭️ Vote Skip — Passed!')
+                    embed.setTitle('⏭️ โหวตผ่าน — ข้ามเพลงแล้ว!')
                         .setColor(config.colors.success)
-                        .setDescription(`ได้รับ ${votes.size}/${required} votes — Skipped! No more songs.`);
+                        .setDescription(`ได้รับครบ ${votes.size}/${required} เสียง — ข้ามเพลงแล้ว! ไม่มีเพลงถัดไป`);
                     return message.reply({ embeds: [embed] });
                 }
 
                 await queue.skip();
                 voteMap.delete(message.guildId);
-                embed.setTitle('⏭️ Vote Skip — Passed!')
+                embed.setTitle('⏭️ โหวตผ่าน — ข้ามเพลงแล้ว!')
                     .setColor(config.colors.success)
-                    .setDescription(`ได้รับ ${votes.size}/${required} votes — Skipping!`);
+                    .setDescription(`ได้รับครบ ${votes.size}/${required} เสียง — ข้ามไปยังเพลงถัดไป!`);
             } catch (error) {
                 voteMap.delete(message.guildId);
-                return message.reply('❌ Could not skip the song.');
+                return reply.error(message, 'ข้ามเพลงไม่ได้', 'เกิดข้อผิดพลาดในการข้ามเพลง');
             }
         }
 

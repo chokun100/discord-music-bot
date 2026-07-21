@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'report',
@@ -10,25 +11,23 @@ module.exports = {
     ],
     async execute(message, args, client) {
         if (!args.length) {
-            return message.reply(
-                '❌ Please describe the bug!\nUsage: `!report <description of the bug>`'
-            );
+            return reply.error(message, 'ไม่ได้ระบุรายละเอียด', 'กรุณาอธิบายบั๊กที่พบ!\nUsage: `!report <รายละเอียดบั๊ก>`');
         }
 
         const description = args.join(' ');
 
         // Validate report length
         if (description.length < 10) {
-            return message.reply('❌ Please provide a more detailed description (at least 10 characters).');
+            return reply.error(message, 'ข้อความสั้นเกินไป', 'กรุณาระบุรายละเอียดอย่างน้อย 10 ตัวอักษร');
         }
 
         if (description.length > 1000) {
-            return message.reply('❌ Report is too long! Please keep it under 1000 characters.');
+            return reply.error(message, 'ข้อความยาวเกินไป', 'กรุณาระบุรายละเอียดไม่เกิน 1,000 ตัวอักษร');
         }
 
         // Check if the bug report channel is configured
         if (!config.bugReportChannelId) {
-            return message.reply('❌ Bug reporting is not configured yet. Please contact the bot owner.');
+            return reply.error(message, 'ยังไม่เปิดใช้งาน', 'ระบบรายงานบั๊กยังไม่ได้กำหนดช่องทาง กรุณาติดต่อผู้พัฒนา');
         }
 
         try {
@@ -37,32 +36,32 @@ module.exports = {
 
             if (!reportChannel) {
                 console.error(`❌ Bug report channel not found: ${config.bugReportChannelId}`);
-                return message.reply('❌ Could not send the report. The report channel is unavailable.');
+                return reply.error(message, 'ส่งรายงานไม่ได้', 'ไม่พบช่องทางสำหรับส่งรายงานบั๊ก');
             }
 
             // Create the report embed
             const reportEmbed = new EmbedBuilder()
                 .setColor(config.colors.warning)
-                .setTitle('🐛 New Bug Report')
+                .setTitle('🐛 รายงานบั๊กใหม่')
                 .setDescription(description)
                 .addFields(
                     {
-                        name: '👤 Reporter',
+                        name: '👤 ผู้รายงาน',
                         value: `${message.author.tag} (ID: ${message.author.id})`,
                         inline: true,
                     },
                     {
-                        name: '🏠 Server',
+                        name: '🏠 เซิร์ฟเวอร์',
                         value: `${message.guild.name} (ID: ${message.guild.id})`,
                         inline: true,
                     },
                     {
-                        name: '📍 Channel',
+                        name: '📍 ช่อง',
                         value: `#${message.channel.name}`,
                         inline: true,
                     }
                 )
-                .setFooter({ text: `Report from ${message.guild.name}` })
+                .setFooter({ text: `รายงานจาก ${message.guild.name}` })
                 .setTimestamp();
 
             // Send to the report channel
@@ -71,17 +70,17 @@ module.exports = {
             // Confirm to the user
             const confirmEmbed = new EmbedBuilder()
                 .setColor(config.colors.success)
-                .setTitle('✅ Bug Report Submitted!')
+                .setTitle('✅ ส่งรายงานบั๊กเรียบร้อย!')
                 .setDescription(
-                    'Your report has been sent to our development team. Thank you for helping us improve!\n\n' +
-                    `You can also join our [Support Server](${config.supportServerInvite}) for faster help.`
+                    'รายงานของคุณถูกส่งไปยังทีมพัฒนาเรียบร้อยแล้ว ขอบคุณที่ช่วยเราปรับปรุงบอทให้ดีขึ้น!\n\n' +
+                    `คุณสามารถเข้าร่วม [Support Server](${config.supportServerInvite}) เพื่อติดตามหรือสอบถามเพิ่มเติมได้`
                 )
                 .setTimestamp();
 
             message.reply({ embeds: [confirmEmbed] });
         } catch (error) {
             console.error(`❌ Report error in guild ${message.guild.id}:`, error);
-            message.reply('❌ Could not submit the bug report. Please try again later.');
+            reply.error(message, 'ส่งรายงานไม่ได้', 'เกิดข้อผิดพลาดในการส่งรายงาน กรุณาลองใหม่อีกครั้ง');
         }
     },
 };

@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'clear',
@@ -11,22 +10,16 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         if (queue.songs.length <= 1) {
-            return message.reply('❌ There are no upcoming songs to clear!');
+            return reply.error(message, 'ไม่มีคิวถัดไป', 'ไม่มีเพลงถัดไปในคิวให้ล้าง');
         }
 
         const count = queue.songs.length - 1;
-        queue.songs.splice(1); // Keep only the current song
+        queue.songs.splice(1); // Keep only current song
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('🗑️ Queue Cleared')
-            .setDescription(`Removed **${count}** song(s) from the queue.\nNow playing: **${queue.songs[0].name}**`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'ล้างคิวเรียบร้อย', `🗑️ ลบ **${count}** เพลงออกจากคิวเรียบร้อยแล้ว\nกำลังเล่น: **${queue.songs[0].name}**`);
     },
 };

@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'queue',
@@ -13,7 +14,7 @@ module.exports = {
         if (args.length && isNaN(args[0])) {
             const voiceChannel = message.member.voice.channel;
             if (!voiceChannel) {
-                return message.reply('❌ You need to be in a voice channel to add songs!');
+                return reply.error(message, 'ไม่ได้อยู่ใน Voice Channel', 'คุณต้องอยู่ใน Voice Channel เพื่อเพิ่มเพลงเข้าคิว');
             }
 
             let query = args.join(' ');
@@ -32,7 +33,7 @@ module.exports = {
             }
 
             try {
-                await message.reply(`🔍 Adding to queue: **${query}**...`);
+                await reply.search(message, 'กำลังเพิ่มเข้าคิว', `🔍 **${query}**`);
                 await client.distube.play(voiceChannel, query, {
                     member: message.member,
                     textChannel: message.channel,
@@ -40,7 +41,7 @@ module.exports = {
                 });
             } catch (error) {
                 console.error(`❌ Queue add error in guild ${message.guild.id}:`, error);
-                message.reply(`❌ Could not add that song.\n**Error:** \`${error.message}\``).catch(() => { });
+                reply.error(message, 'เพิ่มเพลงไม่ได้', `ไม่สามารถเพิ่มเพลงได้\n\`${error.message}\``).catch(() => { });
             }
             return;
         }
@@ -48,7 +49,7 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing in the queue right now!');
+            return reply.error(message, 'ไม่มีคิวเพลง', 'ไม่มีเพลงอยู่ในคิวในขณะนี้');
         }
 
         const currentSong = queue.songs[0];
@@ -68,18 +69,18 @@ module.exports = {
                 .map((song, i) => `**${start + i + 1}.** [${song.name}](${song.url}) - \`${song.formattedDuration}\``)
                 .join('\n');
         } else {
-            queueList = 'No upcoming songs';
+            queueList = 'ไม่มีเพลงถัดไป';
         }
 
         const embed = new EmbedBuilder()
             .setColor(config.colors.music)
-            .setTitle('🎶 Music Queue')
+            .setTitle('🎶 คิวเพลงปัจจุบัน')
             .setDescription(
-                `**Now Playing:**\n🎵 [${currentSong.name}](${currentSong.url}) - \`${currentSong.formattedDuration}\`\n\n` +
-                `**Up Next:**\n${queueList}`
+                `**กำลังเล่น:**\n🎵 [${currentSong.name}](${currentSong.url}) - \`${currentSong.formattedDuration}\`\n\n` +
+                `**รายการถัดไป:**\n${queueList}`
             )
             .setFooter({
-                text: `Page ${page}/${totalPages} • ${queue.songs.length} song(s) in queue • Total: ${queue.formattedDuration}`,
+                text: `หน้า ${page}/${totalPages} • ${queue.songs.length} เพลงในคิว • ความยาวรวม: ${queue.formattedDuration}`,
             })
             .setTimestamp();
 

@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'replay',
@@ -11,17 +10,11 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         queue.seek(0);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('🔄 Replaying')
-            .setDescription(`Restarted: **${queue.songs[0].name}**`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'เล่นซ้ำ', `🔄 เริ่มเล่นใหม่: **${queue.songs[0].name}**`);
     },
 };

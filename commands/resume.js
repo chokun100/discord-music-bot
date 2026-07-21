@@ -1,31 +1,23 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'resume',
-    aliases: ['r', 'unpause'],
-    description: 'Resume paused playback',
+    aliases: ['unpause', 'r'],
+    description: 'Resume the paused song',
     requireVoice: true,
     requireDJ: true,
     async execute(message, args, client) {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         if (!queue.paused) {
-            return message.reply('▶️ Music is already playing!');
+            return reply.info(message, 'กำลังเล่นอยู่แล้ว', '▶️ เพลงกำลังเล่นอยู่แล้ว');
         }
 
         queue.resume();
-
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('▶️ Resumed')
-            .setDescription(`Resumed playing: **${queue.songs[0].name}**`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'เล่นต่อแล้ว', '▶️ เล่นเพลงต่อจากที่หยุดไว้');
     },
 };

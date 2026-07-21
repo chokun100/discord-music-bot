@@ -3,6 +3,7 @@ const config = require('../config');
 const db = require('../database/db');
 const Premium = require('../database/models/premium');
 const logger = require('../utils/logger');
+const { reply } = require('../utils/embed');
 
 // Prepared statement for song history
 const insertHistory = db.prepare(`
@@ -90,9 +91,13 @@ module.exports = function registerDistubeEvents(distube) {
             // Remove the just-added song (last in queue)
             queue.songs.pop();
             logger.warn('DisTube', `Queue full in guild ${queue.id} (max ${maxQueue})`);
-            queue.textChannel?.send(
-                `⚠️ Queue เต็มแล้ว! (สูงสุด ${maxQueue} เพลง)${!Premium.isActive(queue.id) ? '\n⭐ อัพเกรด Premium เพื่อเพิ่มเป็น 500+ เพลง!' : ''}`
-            ).catch(() => { });
+            if (queue.textChannel) {
+                reply.warn(
+                    queue.textChannel,
+                    'คิวเต็มแล้ว!',
+                    `คิวเต็มแล้ว (สูงสุด ${maxQueue} เพลง)${!Premium.isActive(queue.id) ? '\n⭐ อัพเกรด Premium เพื่อเพิ่มเป็น 500+ เพลง!' : ''}`
+                ).catch(() => { });
+            }
         }
     });
 
@@ -129,7 +134,9 @@ module.exports = function registerDistubeEvents(distube) {
     // ─── Disconnect ──────────────────────────────────────────────────────────
     distube.on('disconnect', (queue) => {
         logger.logMusic('disconnect', queue.id, 'Disconnected from voice channel');
-        queue.textChannel?.send('👋 Disconnected from the voice channel.').catch(() => { });
+        if (queue.textChannel) {
+            reply.info(queue.textChannel, 'ออกจากห้องเสียง', '👋 Disconnected from the voice channel.').catch(() => { });
+        }
     });
 
     // ─── DisTube Debug (ffmpeg, yt-dlp internals) ────────────────────────────

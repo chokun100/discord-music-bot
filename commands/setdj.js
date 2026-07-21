@@ -1,6 +1,7 @@
 const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 const config = require('../config');
 const GuildSettings = require('../database/models/guild');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'setdj',
@@ -13,7 +14,7 @@ module.exports = {
     async execute(message, args, client) {
         // Only admins can set DJ role
         if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-            return message.reply('❌ เฉพาะ Admin เท่านั้นที่ตั้ง DJ Role ได้!');
+            return reply.error(message, 'ไม่มีสิทธิ์ใช้งาน', 'เฉพาะ Admin เท่านั้นที่ตั้ง DJ Role ได้!');
         }
 
         // No args = show current DJ role
@@ -44,12 +45,7 @@ module.exports = {
         // Remove DJ role
         if (input === 'off' || input === 'remove' || input === 'none' || input === 'clear') {
             GuildSettings.setDJRole(message.guild.id, null);
-            const embed = new EmbedBuilder()
-                .setColor(config.colors.success)
-                .setTitle('🎧 DJ Role Removed')
-                .setDescription('ลบ DJ Role แล้ว — ทุกคนสามารถใช้คำสั่งเพลงได้')
-                .setTimestamp();
-            return message.reply({ embeds: [embed] });
+            return reply.success(message, 'ลบ DJ Role แล้ว', 'ทุกคนสามารถใช้คำสั่งเพลงได้ตามปกติ');
         }
 
         // Parse role mention or ID
@@ -58,7 +54,7 @@ module.exports = {
             || message.guild.roles.cache.find(r => r.name.toLowerCase() === args.join(' ').toLowerCase());
 
         if (!role) {
-            return message.reply('❌ ไม่พบ Role นี้! ใช้: `!setdj @role` หรือ `!setdj <role name>`');
+            return reply.error(message, 'ไม่พบ Role', 'ใช้: `!setdj @role` หรือ `!setdj <ชื่อ role>`');
         }
 
         GuildSettings.setDJRole(message.guild.id, role.id);

@@ -1,4 +1,5 @@
 const { getVoiceConnection } = require('@discordjs/voice');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'disconnect',
@@ -13,7 +14,7 @@ module.exports = {
         const connection = getVoiceConnection(message.guild.id, client.user.id);
 
         if (!connection) {
-            return message.reply('❌ I\'m not in any voice channel!');
+            return reply.error(message, 'ไม่ได้อยู่ใน Voice Channel', 'บอทไม่ได้อยู่ใน Voice Channel ใดๆ ในขณะนี้');
         }
 
         // Stop any playing queue first
@@ -27,6 +28,6 @@ module.exports = {
         }
 
         connection.destroy();
-        message.reply('👋 Disconnected from the voice channel!');
+        reply.info(message, 'ออกจากห้องเสียงแล้ว', '👋 ออกจาก Voice Channel และล้างคิวเรียบร้อย');
     },
 };

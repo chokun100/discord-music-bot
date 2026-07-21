@@ -2,6 +2,7 @@ const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 const config = require('../config');
 const GuildSettings = require('../database/models/guild');
 const Premium = require('../database/models/premium');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'setprefix',
@@ -14,7 +15,7 @@ module.exports = {
     async execute(message, args, client) {
         // Only admins can change prefix
         if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-            return message.reply('❌ เฉพาะ Admin เท่านั้นที่เปลี่ยน Prefix ได้!');
+            return reply.error(message, 'ไม่มีสิทธิ์ใช้งาน', 'เฉพาะ Admin เท่านั้นที่เปลี่ยน Prefix ได้!');
         }
 
         // No args = show current prefix
@@ -33,19 +34,19 @@ module.exports = {
 
         // Validate prefix
         if (newPrefix.length > 5) {
-            return message.reply('❌ Prefix ต้องไม่ยาวเกิน 5 ตัวอักษร!');
+            return reply.error(message, 'Prefix ยาวเกินไป', 'Prefix ต้องไม่ยาวเกิน 5 ตัวอักษร!');
         }
 
         if (newPrefix.includes(' ')) {
-            return message.reply('❌ Prefix ต้องไม่มีช่องว่าง!');
+            return reply.error(message, 'Prefix ไม่ถูกต้อง', 'Prefix ต้องไม่มีช่องว่าง!');
         }
 
         GuildSettings.setPrefix(message.guild.id, newPrefix);
 
         const embed = new EmbedBuilder()
             .setColor(config.colors.success)
-            .setTitle('⚙️ Prefix Changed')
-            .setDescription(`เปลี่ยน Prefix เป็น \`${newPrefix}\` แล้ว!\n\nตัวอย่าง: \`${newPrefix}play\`, \`${newPrefix}skip\`, \`${newPrefix}help\``)
+            .setTitle('⚙️ เปลี่ยน Prefix แล้ว')
+            .setDescription(`เปลี่ยน Prefix เป็น \`${newPrefix}\` เรียบร้อย!\n\nตัวอย่าง: \`${newPrefix}play\`, \`${newPrefix}skip\`, \`${newPrefix}help\``)
             .setTimestamp();
 
         message.reply({ embeds: [embed] });

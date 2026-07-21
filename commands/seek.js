@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'seek',
@@ -14,11 +13,11 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         if (!args.length) {
-            return message.reply('❌ Provide a timestamp! e.g. `!seek 1:30` or `!seek 90`');
+            return reply.error(message, 'ไม่ได้ระบุเวลา', 'ใส่เวลาที่ต้องการข้ามไป\nตัวอย่าง: `!seek 1:30` หรือ `!seek 90`');
         }
 
         // Parse timestamp: supports "90" (seconds), "1:30" (m:s), "1:30:00" (h:m:s)
@@ -26,16 +25,16 @@ module.exports = {
         let seconds;
 
         if (parts.some(isNaN)) {
-            return message.reply('❌ Invalid timestamp format! Use `1:30` or `90`');
+            return reply.error(message, 'รูปแบบเวลาไม่ถูกต้อง', 'ใช้รูปแบบ `1:30` หรือ `90`');
         }
 
         if (parts.length === 1) seconds = parts[0];
         else if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
         else if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        else return message.reply('❌ Invalid timestamp format!');
+        else return reply.error(message, 'รูปแบบเวลาไม่ถูกต้อง', 'ใช้รูปแบบ `1:30` หรือ `90`');
 
         if (seconds < 0 || seconds >= queue.songs[0].duration) {
-            return message.reply(`❌ Timestamp must be between \`0:00\` and \`${queue.songs[0].formattedDuration}\``);
+            return reply.error(message, 'เวลาเกินขอบเขต', `ใส่เวลาระหว่าง \`0:00\` ถึง \`${queue.songs[0].formattedDuration}\``);
         }
 
         queue.seek(seconds);
@@ -44,12 +43,6 @@ module.exports = {
         const secs = seconds % 60;
         const timestamp = `${mins}:${secs.toString().padStart(2, '0')}`;
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.music)
-            .setTitle('⏩ Seeked')
-            .setDescription(`Jumped to **${timestamp}** in **${queue.songs[0].name}**`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.music(message, 'ข้ามไปยังเวลา', `⏩ ข้ามไป **${timestamp}** ใน **${queue.songs[0].name}**`);
     },
 };

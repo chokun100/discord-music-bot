@@ -1,5 +1,6 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'search',
@@ -12,13 +13,13 @@ module.exports = {
     ],
     async execute(message, args, client) {
         if (!args.length) {
-            return message.reply('❌ ใส่ชื่อเพลงที่ต้องการค้นหา!\nUsage: `!search <ชื่อเพลง>`');
+            return reply.error(message, 'ไม่ได้ระบุคำค้นหา', 'ใส่ชื่อเพลงที่ต้องการค้นหา!\nUsage: `!search <ชื่อเพลง>`');
         }
 
         const query = args.join(' ');
 
         try {
-            const searchMsg = await message.reply(`🔍 กำลังค้นหา: **${query}**...`);
+            const searchMsg = await reply.search(message, 'กำลังค้นหา', `🔍 **${query}**...`);
 
             const results = await client.distube.search(query, {
                 limit: 5,
@@ -27,7 +28,7 @@ module.exports = {
             });
 
             if (!results.length) {
-                return searchMsg.edit('❌ ไม่พบผลลัพธ์! ลองคำค้นอื่น');
+                return reply.edit(searchMsg, 'error', 'ไม่พบผลลัพธ์', 'ไม่พบผลลัพธ์การค้นหา! ลองใช้คำค้นอื่น');
             }
 
             const resultList = results
@@ -59,14 +60,7 @@ module.exports = {
                 m.delete().catch(() => { });
 
                 if (m.content.toLowerCase() === 'cancel') {
-                    return searchMsg.edit({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setColor(config.colors.error)
-                                .setTitle('❌ ยกเลิกการค้นหา')
-                                .setTimestamp()
-                        ],
-                    });
+                    return reply.edit(searchMsg, 'error', 'ยกเลิกการค้นหา', 'ยกเลิกการเลือกเพลงแล้ว');
                 }
 
                 const index = parseInt(m.content) - 1;
@@ -74,7 +68,7 @@ module.exports = {
 
                 const voiceChannel = message.member.voice.channel;
                 if (!voiceChannel) {
-                    return searchMsg.edit('❌ คุณต้องอยู่ใน Voice Channel!');
+                    return reply.edit(searchMsg, 'error', 'ไม่ได้อยู่ใน Voice Channel', 'คุณต้องอยู่ใน Voice Channel เพื่อเล่นเพลง');
                 }
 
                 try {
@@ -86,26 +80,18 @@ module.exports = {
                     searchMsg.delete().catch(() => { });
                 } catch (error) {
                     console.error('❌ Search play error:', error);
-                    searchMsg.edit(`❌ ไม่สามารถเล่นเพลงนี้ได้`).catch(() => { });
+                    reply.edit(searchMsg, 'error', 'เล่นเพลงไม่ได้', 'ไม่สามารถเล่นเพลงนี้ได้').catch(() => { });
                 }
             });
 
             collector.on('end', (collected) => {
                 if (collected.size === 0) {
-                    searchMsg.edit({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setColor(config.colors.warning)
-                                .setTitle('⏰ หมดเวลา')
-                                .setDescription('ไม่ได้เลือกเพลง — การค้นหาถูกยกเลิก')
-                                .setTimestamp()
-                        ],
-                    }).catch(() => { });
+                    reply.edit(searchMsg, 'warn', 'หมดเวลา', 'ไม่ได้เลือกเพลง — การค้นหาถูกยกเลิก').catch(() => { });
                 }
             });
         } catch (error) {
             console.error('❌ Search error:', error);
-            message.reply('❌ เกิดข้อผิดพลาดในการค้นหา ลองอีกครั้ง').catch(() => { });
+            reply.error(message, 'เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการค้นหา ลองอีกครั้ง').catch(() => { });
         }
     },
 };

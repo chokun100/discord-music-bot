@@ -1,3 +1,5 @@
+const { reply } = require('../utils/embed');
+
 module.exports = {
     name: 'pause',
     aliases: [],
@@ -8,7 +10,7 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         // Determine if called as !pause or !resume
@@ -17,29 +19,25 @@ module.exports = {
         try {
             if (queue.paused && commandUsed === 'resume') {
                 queue.resume();
-                message.react('▶️').catch(() => { });
-                return message.reply('▶️ Resumed the music!');
+                return reply.success(message, 'เล่นต่อแล้ว', '▶️ เล่นเพลงต่อจากที่หยุดไว้');
             }
 
             if (!queue.paused && commandUsed === 'pause') {
                 queue.pause();
-                message.react('⏸️').catch(() => { });
-                return message.reply('⏸️ Paused the music! Use `!resume` to continue.');
+                return reply.info(message, 'หยุดชั่วคราว', '⏸️ หยุดเพลงชั่วคราว\nใช้ `!resume` เพื่อเล่นต่อ');
             }
 
             // Toggle behavior if using !pause when already paused (or vice versa)
             if (queue.paused) {
                 queue.resume();
-                message.react('▶️').catch(() => { });
-                message.reply('▶️ Resumed the music!');
+                reply.success(message, 'เล่นต่อแล้ว', '▶️ เล่นเพลงต่อจากที่หยุดไว้');
             } else {
                 queue.pause();
-                message.react('⏸️').catch(() => { });
-                message.reply('⏸️ Paused the music! Use `!resume` to continue.');
+                reply.info(message, 'หยุดชั่วคราว', '⏸️ หยุดเพลงชั่วคราว\nใช้ `!resume` เพื่อเล่นต่อ');
             }
         } catch (error) {
             console.error(`❌ Pause/Resume error in guild ${message.guild.id}:`, error);
-            message.reply('❌ Could not pause/resume the music.');
+            reply.error(message, 'เกิดข้อผิดพลาด', 'ไม่สามารถ Pause/Resume เพลงได้');
         }
     },
 };

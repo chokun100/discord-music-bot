@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 const GuildSettings = require('../database/models/guild');
 
 module.exports = {
@@ -15,16 +14,10 @@ module.exports = {
 
         GuildSettings.set247(guildId, newState);
 
-        const embed = new EmbedBuilder()
-            .setColor(newState ? config.colors.success : config.colors.error)
-            .setTitle(newState ? '🕐 24/7 Mode — Enabled' : '🕐 24/7 Mode — Disabled')
-            .setDescription(
-                newState
-                    ? 'บอทจะอยู่ใน Voice Channel ตลอดเวลา แม้ไม่มีคนอยู่!\nบอทจะไม่ disconnect จาก idle timeout'
-                    : 'บอทจะ disconnect อัตโนมัติเมื่อ Voice Channel ว่าง (5 นาที)'
-            )
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        if (newState) {
+            reply.success(message, 'เปิดใช้งานโหมด 24/7', '🕐 บอทจะอยู่ใน Voice Channel ตลอดเวลาแม้ไม่มีคนอยู่ (ไม่ตัดการเชื่อมต่อจาก idle timeout)');
+        } else {
+            reply.info(message, 'ปิดใช้งานโหมด 24/7', 'บอทจะตัดการเชื่อมต่ออัตโนมัติเมื่อ Voice Channel ว่างเกิน 5 นาที');
+        }
     },
 };

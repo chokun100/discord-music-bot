@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Collection, ActivityType, Events } = require('discord.js');
 const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
+const ffmpegPath = require('ffmpeg-static');
 const config = require('./config');
 const loadCommands = require('./handlers/commandHandler');
 const registerDistubeEvents = require('./events/distube');
@@ -49,6 +50,7 @@ client.distube = new DisTube(client, {
     // FFmpeg args for stable, smooth audio streaming
     // Handles YouTube CDN connection resets (error -10054) gracefully
     ffmpeg: {
+        path: ffmpegPath,
         args: {
             global: {},
             input: {

@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'autoplay',
@@ -11,21 +10,15 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         const autoplay = queue.toggleAutoplay();
 
-        const embed = new EmbedBuilder()
-            .setColor(autoplay ? config.colors.success : config.colors.error)
-            .setTitle(autoplay ? '✅ Autoplay Enabled' : '❌ Autoplay Disabled')
-            .setDescription(
-                autoplay
-                    ? 'I\'ll play related songs when the queue ends!'
-                    : 'I\'ll stop when the queue ends.'
-            )
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        if (autoplay) {
+            reply.success(message, 'เปิดใช้งาน Autoplay', 'บอทจะเล่นเพลงที่เกี่ยวข้องให้อัตโนมัติเมื่อคิวหมด!');
+        } else {
+            reply.info(message, 'ปิดใช้งาน Autoplay', 'บอทจะหยุดเล่นเมื่อคิวเพลงหมดลง');
+        }
     },
 };

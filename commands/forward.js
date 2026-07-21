@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'forward',
@@ -14,24 +13,18 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         const seconds = parseInt(args[0]) || 10;
         const newTime = queue.currentTime + seconds;
 
         if (newTime >= queue.songs[0].duration) {
-            return message.reply(`❌ ไม่สามารถเลื่อนเกินความยาวเพลง! (${queue.songs[0].formattedDuration})`);
+            return reply.error(message, 'เลื่อนเวลาไม่ได้', `ไม่สามารถเลื่อนเกินความยาวเพลงได้! (${queue.songs[0].formattedDuration})`);
         }
 
         queue.seek(newTime);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('⏩ Fast Forward')
-            .setDescription(`เลื่อนไปข้างหน้า **${seconds}** วินาที`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'กรอไปข้างหน้า', `⏩ เลื่อนไปข้างหน้า **${seconds}** วินาที`);
     },
 };

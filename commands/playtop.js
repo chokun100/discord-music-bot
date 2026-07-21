@@ -1,5 +1,6 @@
 const config = require('../config');
 const { getVoiceConnection } = require('@discordjs/voice');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'playtop',
@@ -14,11 +15,11 @@ module.exports = {
         const voiceChannel = message.member.voice.channel;
 
         if (!voiceChannel) {
-            return message.reply('❌ You need to be in a voice channel!');
+            return reply.error(message, 'ไม่ได้อยู่ใน Voice Channel', 'คุณต้องอยู่ใน Voice Channel เพื่อเล่นเพลง');
         }
 
         if (!args.length) {
-            return message.reply('❌ Provide a URL or search term!\nUsage: `!playtop <URL or search>`');
+            return reply.error(message, 'ไม่ได้ระบุเพลง', 'กรุณาใส่ URL หรือชื่อเพลง\nUsage: `!playtop <URL or search>`');
         }
 
         let query = args.join(' ');
@@ -35,7 +36,7 @@ module.exports = {
         } catch { }
 
         try {
-            await message.reply(`🔍 Adding to top: **${query}**...`);
+            await reply.search(message, 'กำลังแทรกขึ้นบนสุดของคิว', `🔍 **${query}**`);
             await client.distube.play(voiceChannel, query, {
                 member: message.member,
                 textChannel: message.channel,
@@ -44,7 +45,7 @@ module.exports = {
             });
         } catch (error) {
             console.error(`❌ Playtop error:`, error);
-            message.reply(`❌ Could not add that song.\n**Error:** \`${error.message}\``).catch(() => { });
+            reply.error(message, 'เพิ่มเพลงไม่ได้', `ไม่สามารถเพิ่มเพลงได้\n\`${error.message}\``).catch(() => { });
         }
     },
 };

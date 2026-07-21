@@ -1,5 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
-const config = require('../config');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'skipto',
@@ -14,28 +13,22 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         if (!args.length) {
-            return message.reply('❌ Provide the queue position! e.g. `!skipto 3`');
+            return reply.error(message, 'ไม่ได้ระบุตำแหน่ง', 'ใส่ตำแหน่งเพลงที่ต้องการข้ามไป\nตัวอย่าง: `!skipto 3`');
         }
 
         const position = parseInt(args[0]);
 
         if (isNaN(position) || position < 1 || position >= queue.songs.length) {
-            return message.reply(`❌ Position must be between **1** and **${queue.songs.length - 1}**`);
+            return reply.error(message, 'ตำแหน่งไม่ถูกต้อง', `ใช้ตัวเลขระหว่าง **1** ถึง **${queue.songs.length - 1}**`);
         }
 
         const target = queue.songs[position];
         await queue.jump(position);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.colors.success)
-            .setTitle('⏭️ Skipped To')
-            .setDescription(`Now playing: **[${target.name}](${target.url})**`)
-            .setTimestamp();
-
-        message.reply({ embeds: [embed] });
+        reply.success(message, 'ข้ามไปเพลง', `⏭️ กำลังเล่น: **[${target.name}](${target.url})**`);
     },
 };

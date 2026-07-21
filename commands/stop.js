@@ -1,3 +1,5 @@
+const { reply } = require('../utils/embed');
+
 module.exports = {
     name: 'stop',
     aliases: ['st0p'],
@@ -8,15 +10,15 @@ module.exports = {
         const queue = client.distube.getQueue(message.guildId);
 
         if (!queue) {
-            return message.reply('❌ There is nothing playing right now!');
+            return reply.error(message, 'ไม่มีเพลงกำลังเล่น', 'ใช้ `!play` เพื่อเริ่มเล่นเพลง');
         }
 
         try {
             await queue.stop();
-            message.reply('⏹️ Stopped the music and cleared the queue. Goodbye!');
+            reply.success(message, 'หยุดเล่นเพลงแล้ว', '⏹️ หยุดเล่นและล้างคิวเรียบร้อย');
         } catch (error) {
             console.error(`❌ Stop error in guild ${message.guild.id}:`, error);
-            message.reply('❌ Could not stop the music.');
+            reply.error(message, 'หยุดเพลงไม่ได้', 'เกิดข้อผิดพลาดในการหยุดเพลง');
         }
     },
 };

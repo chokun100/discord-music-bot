@@ -45,7 +45,17 @@ function compareVersions(a, b) {
 function checkYtDlp() {
     try {
         // ─── 1. เช็ค System yt-dlp ──────────────────────────────────────
-        const systemVersion = getVersion('yt-dlp');
+        let systemVersion = getVersion('yt-dlp');
+        const localBin = path.join(__dirname, '..', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+
+        // ถ้าไม่เจอใน PATH → ลองหาใน project root
+        if (!systemVersion && fs.existsSync(localBin)) {
+            systemVersion = getVersion(localBin);
+            if (systemVersion) {
+                logger.info('yt-dlp', `Found local yt-dlp binary: ${localBin}`);
+            }
+        }
+
         if (!systemVersion) {
             logger.warn('yt-dlp', 'System yt-dlp not found! Please install: winget install yt-dlp');
             return;
@@ -112,15 +122,24 @@ function checkYtDlp() {
 function copySystemToPlugin() {
     try {
         // หา path ของ system yt-dlp
-        const systemPath = execSync(
-            process.platform === 'win32'
-                ? 'where yt-dlp'
-                : 'which yt-dlp',
-            { encoding: 'utf8', timeout: 5000 }
-        ).trim().split(/\r?\n/)[0]; // เอาบรรทัดแรก (กรณี where คืนหลาย path)
+        let systemPath;
+        try {
+            systemPath = execSync(
+                process.platform === 'win32'
+                    ? 'where yt-dlp'
+                    : 'which yt-dlp',
+                { encoding: 'utf8', timeout: 5000 }
+            ).trim().split(/\r?\n/)[0]; // เอาบรรทัดแรก (กรณี where คืนหลาย path)
+        } catch {
+            // where/which ไม่เจอ → ลองใช้ local binary
+            const localBin = path.join(__dirname, '..', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+            if (fs.existsSync(localBin)) {
+                systemPath = localBin;
+            }
+        }
 
-        if (!fs.existsSync(systemPath)) {
-            logger.warn('yt-dlp', `System binary not found at: ${systemPath}`);
+        if (!systemPath || !fs.existsSync(systemPath)) {
+            logger.warn('yt-dlp', `System binary not found`);
             return;
         }
 

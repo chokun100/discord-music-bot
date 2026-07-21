@@ -1,6 +1,7 @@
 const config = require('../config');
 const { getVoiceConnection } = require('@discordjs/voice');
 const logger = require('../utils/logger');
+const { reply } = require('../utils/embed');
 
 module.exports = {
     name: 'play',
@@ -14,18 +15,18 @@ module.exports = {
         const voiceChannel = message.member.voice.channel;
 
         if (!voiceChannel) {
-            return message.reply('❌ You need to be in a voice channel to play music!');
+            return reply.error(message, 'ไม่ได้อยู่ใน Voice Channel', 'คุณต้องอยู่ใน Voice Channel เพื่อเล่นเพลง');
         }
 
         // Check bot permissions in the voice channel
         const permissions = voiceChannel.permissionsFor(client.user);
         if (!permissions.has('Connect') || !permissions.has('Speak')) {
             logger.warn('Play', `Missing voice permissions in guild ${message.guild.id}, channel ${voiceChannel.id}`);
-            return message.reply('❌ บอทไม่มีสิทธิ์ **Connect** หรือ **Speak** ใน Voice Channel นี้!');
+            return reply.error(message, 'ไม่มีสิทธิ์เข้าถึง', 'บอทไม่มีสิทธิ์ **Connect** หรือ **Speak** ใน Voice Channel นี้');
         }
 
         if (!args.length) {
-            return message.reply('❌ Please provide a YouTube URL or search term!\nUsage: `!play <URL or search>`');
+            return reply.error(message, 'ไม่ได้ระบุเพลง', 'กรุณาใส่ URL หรือชื่อเพลง\nUsage: `!play <URL or search>`');
         }
 
         let query = args.join(' ');
@@ -86,7 +87,7 @@ module.exports = {
         }
 
         try {
-            await message.reply(`🔍 Searching for: **${query}**...`);
+            await reply.search(message, 'กำลังค้นหา', `🔍 **${query}**`);
             logger.debug('Play', `Calling distube.play() for guild ${message.guild.id}...`);
 
             await client.distube.play(voiceChannel, query, playOptions);
@@ -116,12 +117,12 @@ module.exports = {
                     return; // Retry succeeded
                 } catch (retryError) {
                     logger.error('Play', `Retry also failed for guild ${message.guild.id}`, retryError);
-                    message.reply('❌ Could not connect to the voice channel. Please try again.').catch(() => { });
+                    reply.error(message, 'เชื่อมต่อไม่ได้', 'ไม่สามารถเชื่อมต่อ Voice Channel ได้ กรุณาลองใหม่อีกครั้ง').catch(() => { });
                     return;
                 }
             }
             logger.error('Play', `Failed in guild ${message.guild.id}: ${error.message}`, error);
-            message.reply(`❌ Could not play that song.\n**Error:** \`${error.message}\``).catch(() => { });
+            reply.error(message, 'เล่นเพลงไม่ได้', `ไม่สามารถเล่นเพลงนี้ได้\n\`${error.message}\``).catch(() => { });
         }
     },
 };
