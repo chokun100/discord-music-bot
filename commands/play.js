@@ -2,6 +2,7 @@ const config = require('../config');
 const { getVoiceConnection } = require('@discordjs/voice');
 const logger = require('../utils/logger');
 const { reply } = require('../utils/embed');
+const { cleanYoutubeUrl } = require('../utils/youtube');
 
 module.exports = {
     name: 'play',
@@ -29,20 +30,7 @@ module.exports = {
             return reply.error(message, 'ไม่ได้ระบุเพลง', 'กรุณาใส่ URL หรือชื่อเพลง\nUsage: `!play <URL or search>`');
         }
 
-        let query = args.join(' ');
-
-        // Strip &list= from YouTube Music URLs to avoid resolving entire playlists
-        try {
-            const url = new URL(query);
-            if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
-                url.searchParams.delete('list');
-                url.searchParams.delete('index');
-                url.searchParams.delete('start_radio');
-                query = url.toString();
-            }
-        } catch {
-            // Not a URL — search query
-        }
+        let query = cleanYoutubeUrl(args.join(' '));
 
         logger.music('Play', `Request: "${query}" by ${message.author.tag} in #${voiceChannel.name} (${message.guild.name})`);
 

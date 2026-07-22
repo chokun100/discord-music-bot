@@ -1,6 +1,7 @@
 const config = require('../config');
 const { getVoiceConnection } = require('@discordjs/voice');
 const { reply } = require('../utils/embed');
+const { cleanYoutubeUrl } = require('../utils/youtube');
 
 module.exports = {
     name: 'playtop',
@@ -22,18 +23,7 @@ module.exports = {
             return reply.error(message, 'ไม่ได้ระบุเพลง', 'กรุณาใส่ URL หรือชื่อเพลง\nUsage: `!playtop <URL or search>`');
         }
 
-        let query = args.join(' ');
-
-        // Strip playlist params from YouTube URLs
-        try {
-            const url = new URL(query);
-            if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
-                url.searchParams.delete('list');
-                url.searchParams.delete('index');
-                url.searchParams.delete('start_radio');
-                query = url.toString();
-            }
-        } catch { }
+        let query = cleanYoutubeUrl(args.join(' '));
 
         try {
             await reply.search(message, 'กำลังแทรกขึ้นบนสุดของคิว', `🔍 **${query}**`);

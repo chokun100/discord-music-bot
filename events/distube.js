@@ -36,16 +36,33 @@ module.exports = function registerDistubeEvents(distube) {
             volume: queue.volume,
         });
 
+        const queuedSongsCount = queue.songs.length - 1;
+        const nextSong = queue.songs[1];
+
+        let nextSongText = 'ไม่มี (ไม่มีเพลงต่อในคิว)';
+        if (nextSong) {
+            const nextTitle = nextSong.name.length > 50 ? `${nextSong.name.substring(0, 47)}...` : nextSong.name;
+            nextSongText = `[${nextTitle}](${nextSong.url}) \`[${nextSong.formattedDuration}]\``;
+        }
+
+        let queueStatusText = 'ไม่มีเพลงรออยู่ในคิว';
+        if (queuedSongsCount > 0) {
+            queueStatusText = `\`${queuedSongsCount}\` เพลงรออยู่ในคิว • ความยาวรวม \`${queue.formattedDuration}\``;
+        }
+
         const embed = new EmbedBuilder()
             .setColor(config.colors.music)
-            .setTitle('🎵 Now Playing')
-            .setDescription(`[${song.name}](${song.url})`)
+            .setTitle('🎵 Now Playing (กำลังเล่น)')
+            .setDescription(`[**${song.name}**](${song.url})`)
             .setThumbnail(song.thumbnail)
             .addFields(
-                { name: '⏱️ Duration', value: `\`${song.formattedDuration}\``, inline: true },
-                { name: '👤 Requested by', value: `${song.user}`, inline: true },
-                { name: '🔊 Volume', value: `${queue.volume}%`, inline: true }
+                { name: '⏱️ ความยาว', value: `\`${song.formattedDuration}\``, inline: true },
+                { name: '👤 ขอโดย', value: `${song.user}`, inline: true },
+                { name: '🔊 เสียง', value: `\`${queue.volume}%\``, inline: true },
+                { name: '⏭️ เพลงถัดไป (Next Up)', value: nextSongText, inline: false },
+                { name: '📜 สถานะคิว', value: queueStatusText, inline: false }
             )
+            .setFooter({ text: `คิวรวมทั้งหมด: ${queue.songs.length} เพลง • Momuxic` })
             .setTimestamp();
 
         queue.textChannel?.send({ embeds: [embed] }).catch(() => { });
@@ -72,14 +89,27 @@ module.exports = function registerDistubeEvents(distube) {
             user: song.user?.tag || 'unknown',
         });
 
+        const queuedSongsCount = queue.songs.length - 1;
+        const nextSong = queue.songs[1];
+
+        let nextSongText = 'ไม่มี';
+        if (nextSong) {
+            const nextTitle = nextSong.name.length > 50 ? `${nextSong.name.substring(0, 47)}...` : nextSong.name;
+            nextSongText = `[${nextTitle}](${nextSong.url}) \`[${nextSong.formattedDuration}]\``;
+        }
+
         const embed = new EmbedBuilder()
             .setColor(config.colors.success)
-            .setTitle('➕ Added to Queue')
-            .setDescription(`[${song.name}](${song.url}) — \`${song.formattedDuration}\``)
+            .setTitle('➕ Added to Queue (เพิ่มเข้าคิวเรียบร้อย)')
+            .setDescription(`[**${song.name}**](${song.url}) — \`${song.formattedDuration}\``)
+            .setThumbnail(song.thumbnail)
             .addFields(
-                { name: 'Position in queue', value: `#${queue.songs.length}`, inline: true },
-                { name: 'Requested by', value: `${song.user}`, inline: true }
+                { name: '📍 อันดับในคิว', value: `#${queue.songs.length}`, inline: true },
+                { name: '👤 ขอโดย', value: `${song.user}`, inline: true },
+                { name: '📜 เพลงรออยู่ในคิว', value: `\`${queuedSongsCount}\` เพลง`, inline: true },
+                { name: '⏭️ เพลงถัดไป', value: nextSongText, inline: false }
             )
+            .setFooter({ text: `คิวรวมทั้งหมด: ${queue.songs.length} เพลง • Momuxic` })
             .setTimestamp();
 
         queue.textChannel?.send({ embeds: [embed] }).catch(() => { });
@@ -106,13 +136,29 @@ module.exports = function registerDistubeEvents(distube) {
         logger.logMusic('addList', queue.id,
             `Playlist "${playlist.name}" — ${playlist.songs.length} songs added`);
 
+        const queuedSongsCount = queue.songs.length - 1;
+        const nextSong = queue.songs[1];
+
+        let nextSongText = 'ไม่มี';
+        if (nextSong) {
+            const nextTitle = nextSong.name.length > 50 ? `${nextSong.name.substring(0, 47)}...` : nextSong.name;
+            nextSongText = `[${nextTitle}](${nextSong.url}) \`[${nextSong.formattedDuration}]\``;
+        }
+
         const embed = new EmbedBuilder()
             .setColor(config.colors.success)
-            .setTitle('📋 Playlist Added')
+            .setTitle('📋 Playlist Added (เพิ่ม Playlist เข้าคิว)')
             .setDescription(
-                `**${playlist.name}**\n` +
-                `\`${playlist.songs.length}\` songs added to the queue`
+                `**[${playlist.name}](${playlist.url || playlist.songs[0]?.url})**\n` +
+                `✅ เพิ่มแล้ว \`${playlist.songs.length}\` เพลง เข้าคิวเรียบร้อย`
             )
+            .setThumbnail(playlist.thumbnail || playlist.songs[0]?.thumbnail)
+            .addFields(
+                { name: '📊 เพิ่มเข้ามา', value: `\`${playlist.songs.length}\` เพลง`, inline: true },
+                { name: '📜 เพลงรอในคิวรวม', value: `\`${queuedSongsCount}\` เพลง (\`${queue.formattedDuration}\`)`, inline: true },
+                { name: '⏭️ เพลงถัดไป', value: nextSongText, inline: false }
+            )
+            .setFooter({ text: `คิวรวมทั้งหมด: ${queue.songs.length} เพลง • Momuxic` })
             .setTimestamp();
 
         queue.textChannel?.send({ embeds: [embed] }).catch(() => { });

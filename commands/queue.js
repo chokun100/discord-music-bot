@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../config');
 const { reply } = require('../utils/embed');
+const { cleanYoutubeUrl } = require('../utils/youtube');
 
 module.exports = {
     name: 'queue',
@@ -17,20 +18,7 @@ module.exports = {
                 return reply.error(message, 'ไม่ได้อยู่ใน Voice Channel', 'คุณต้องอยู่ใน Voice Channel เพื่อเพิ่มเพลงเข้าคิว');
             }
 
-            let query = args.join(' ');
-
-            // Strip playlist params from YouTube URLs
-            try {
-                const url = new URL(query);
-                if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
-                    url.searchParams.delete('list');
-                    url.searchParams.delete('index');
-                    url.searchParams.delete('start_radio');
-                    query = url.toString();
-                }
-            } catch {
-                // Not a URL — search query
-            }
+            let query = cleanYoutubeUrl(args.join(' '));
 
             try {
                 await reply.search(message, 'กำลังเพิ่มเข้าคิว', `🔍 **${query}**`);
