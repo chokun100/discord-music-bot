@@ -2,7 +2,7 @@ const config = require('../config');
 const { getVoiceConnection } = require('@discordjs/voice');
 const logger = require('../utils/logger');
 const { reply } = require('../utils/embed');
-const { cleanYoutubeUrl } = require('../utils/youtube');
+const { cleanYoutubeUrl, isRadioMixUrl, resolveRadioMix } = require('../utils/youtube');
 
 module.exports = {
     name: 'play',
@@ -30,39 +30,69 @@ module.exports = {
             return reply.error(message, 'ไม่ได้ระบุเพลง', 'กรุณาใส่ URL หรือชื่อเพลง\nUsage: `!play <URL or search>`');
         }
 
-        let query = cleanYoutubeUrl(args.join(' '));
+        const rawQuery = args.join(' ');
+
+        // ─── Radio Mix handling ─────────────────────────────────────────
+        // Radio Mix (list=RD...) playlists are infinite and cause yt-dlp to hang
+        // when DisTube tries to resolve them. We handle them separately by running
+        // yt-dlp ourselves with --playlist-end to grab a limited number of songs,
+        // then queue each individual video URL through distube.play().
+        if (isRadioMixUrl(rawQuery)) {
+            logger.music('Play', `Radio Mix detected: "${rawQuery}" by ${message.author.tag} in #${voiceChannel.name} (${message.guild.name})`);
+            await reply.search(message, 'กำลังโหลด Radio Mix', '📻 กำลังดึงเพลง 5 เพลงจาก Radio Mix...');
+
+            try {
+                const mix = await resolveRadioMix(rawQuery, 5);
+
+                if (!mix.urls.length) {
+                    return reply.error(message, 'ไม่พบเพลง', 'ไม่สามารถดึงเพลงจาก Radio Mix นี้ได้');
+                }
+
+                logger.info('Play', `Radio Mix "${mix.name}" resolved: ${mix.urls.length} songs`);
+
+                // Clean up stale connections before playing
+                cleanupStaleConnections(client, message);
+
+                // DisTube v5 validates options.message with isMessageInstance()
+                const playOptions = {
+                    member: message.member,
+                    textChannel: message.channel,
+                };
+                if (!message._isInteraction) {
+                    playOptions.message = message;
+                }
+
+                // Play all resolved songs — first one starts playing, rest go to queue
+                for (const url of mix.urls) {
+                    await client.distube.play(voiceChannel, url, playOptions);
+                }
+
+                logger.debug('Play', `Radio Mix queued ${mix.urls.length} songs for guild ${message.guild.id}`);
+            } catch (error) {
+                logger.error('Play', `Radio Mix failed for guild ${message.guild.id}: ${error.message}`, error);
+
+                // Fallback: play just the single video (strip list param)
+                const fallbackQuery = cleanYoutubeUrl(rawQuery);
+                logger.info('Play', `Falling back to single video: "${fallbackQuery}"`);
+                try {
+                    const playOptions = { member: message.member, textChannel: message.channel };
+                    if (!message._isInteraction) playOptions.message = message;
+                    await client.distube.play(voiceChannel, fallbackQuery, playOptions);
+                } catch (fallbackErr) {
+                    logger.error('Play', `Fallback also failed: ${fallbackErr.message}`);
+                    reply.error(message, 'เล่นเพลงไม่ได้', `ไม่สามารถเล่นเพลงนี้ได้\n\`${fallbackErr.message}\``).catch(() => { });
+                }
+            }
+            return;
+        }
+
+        // ─── Normal flow (single video / standard playlist / search) ────
+        let query = cleanYoutubeUrl(rawQuery);
 
         logger.music('Play', `Request: "${query}" by ${message.author.tag} in #${voiceChannel.name} (${message.guild.name})`);
 
-        // Clean up any stale queue/connection before playing
-        try {
-            const staleQueue = client.distube.getQueue(message.guild.id);
-            if (staleQueue) {
-                const botVoice = message.guild.members.me?.voice;
-                if (!botVoice?.channelId) {
-                    // Bot is NOT in voice but a queue exists — it's stale, clear it
-                    logger.warn('Play', `Clearing stale queue for guild ${message.guild.id}`);
-                    try { staleQueue.stop(); } catch { }
-                }
-            }
-        } catch { }
-
-        // Also destroy any orphaned voice connection (with or without group ID)
-        try {
-            const botVoice = message.guild.members.me?.voice;
-            // Destroy connection with group ID
-            const oldConn = getVoiceConnection(message.guild.id, client.user.id);
-            if (oldConn && !botVoice?.channelId) {
-                logger.warn('Play', `Destroying orphaned voice connection for guild ${message.guild.id}`);
-                oldConn.destroy();
-            }
-            // Destroy connection without group ID (created by !join or other sources)
-            const oldConn2 = getVoiceConnection(message.guild.id);
-            if (oldConn2) {
-                logger.warn('Play', `Destroying non-DisTube voice connection for guild ${message.guild.id}`);
-                oldConn2.destroy();
-            }
-        } catch { }
+        // Clean up stale connections
+        cleanupStaleConnections(client, message);
 
         // DisTube v5 validates options.message with isMessageInstance()
         // Wrapped interactions are NOT real Discord.Message, so omit the field
@@ -114,3 +144,35 @@ module.exports = {
         }
     },
 };
+
+/**
+ * Clean up stale queues and orphaned voice connections.
+ * Extracted to avoid duplicating this block for Radio Mix vs normal flow.
+ */
+function cleanupStaleConnections(client, message) {
+    try {
+        const staleQueue = client.distube.getQueue(message.guild.id);
+        if (staleQueue) {
+            const botVoice = message.guild.members.me?.voice;
+            if (!botVoice?.channelId) {
+                logger.warn('Play', `Clearing stale queue for guild ${message.guild.id}`);
+                try { staleQueue.stop(); } catch { }
+            }
+        }
+    } catch { }
+
+    try {
+        const botVoice = message.guild.members.me?.voice;
+        const oldConn = getVoiceConnection(message.guild.id, client.user.id);
+        if (oldConn && !botVoice?.channelId) {
+            logger.warn('Play', `Destroying orphaned voice connection for guild ${message.guild.id}`);
+            oldConn.destroy();
+        }
+        const oldConn2 = getVoiceConnection(message.guild.id);
+        if (oldConn2) {
+            logger.warn('Play', `Destroying non-DisTube voice connection for guild ${message.guild.id}`);
+            oldConn2.destroy();
+        }
+    } catch { }
+}
+
